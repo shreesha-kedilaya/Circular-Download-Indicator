@@ -10,10 +10,15 @@ import Foundation
 import Photos
 import AVFoundation
 
+typealias libraryInfoTupple = (PHAsset, NSURL)
+
 class GaleryCollectionViewModel {
 
     var libraryAssets = [PHAsset]()
     var libraryUrls = [NSURL]()
+
+    var libraryInfo = [libraryInfoTupple]()
+
 
     let imageCachingManager = PHCachingImageManager()
 
@@ -21,6 +26,7 @@ class GaleryCollectionViewModel {
 
         if mPhasset.mediaType == .Image {
             let options: PHContentEditingInputRequestOptions = PHContentEditingInputRequestOptions()
+
             options.canHandleAdjustmentData = {(adjustmeta: PHAdjustmentData) -> Bool in
                 return true
             }
@@ -30,6 +36,7 @@ class GaleryCollectionViewModel {
         } else if mPhasset.mediaType == .Video {
             let options: PHVideoRequestOptions = PHVideoRequestOptions()
             options.version = .Original
+            options.deliveryMode = .FastFormat
             PHImageManager.defaultManager().requestAVAssetForVideo(mPhasset, options: options, resultHandler: {(asset: AVAsset?, audioMix: AVAudioMix?, info: [NSObject : AnyObject]?) -> Void in
 
                 if let urlAsset = asset as? AVURLAsset {
@@ -46,16 +53,18 @@ class GaleryCollectionViewModel {
         libraryUrls.removeAll()
         for asset in libraryAssets.enumerate() {
             getURLofMedia(asset.element, completionHandler: { (responseURL) in
+                
                 if let responseURL = responseURL {
                     self.libraryUrls.append(responseURL)
+                    let library = (asset.element, responseURL)
+                    self.libraryInfo.append(library)
                 }
+
                 if self.libraryAssets.count == self.libraryUrls.count {
                     completion()
                 }
             })
         }
-
-        print("libraryUrls \(libraryUrls) \n \n")
     }
 
     func fetchLibraryAssets(completion: () -> ()) {
@@ -65,7 +74,7 @@ class GaleryCollectionViewModel {
             cacheoptions.synchronous = true
             cacheoptions.version = .Original
             cacheoptions.resizeMode = .Exact
-            self.imageCachingManager.startCachingImagesForAssets(self.libraryAssets, targetSize: CGSize(width: 768.0, height: 1024), contentMode: .AspectFit, options: cacheoptions)
+            self.imageCachingManager.startCachingImagesForAssets(self.libraryAssets, targetSize: CGSize(width:UIScreen.mainScreen().bounds.size.width * UIScreen.mainScreen().scale,height:UIScreen.mainScreen().bounds.size.height * UIScreen.mainScreen().scale), contentMode: .AspectFit, options: cacheoptions)
 
             self.storeAllUrls{
                 completion()
@@ -85,18 +94,9 @@ class GaleryCollectionViewModel {
             if let asset = object as? PHAsset {
                 self.libraryAssets.append(asset)
             }
-            if index == results.count - 1 {
+            if self.libraryAssets.count == results.count {
                 completion()
             }
         }
-    }
-
-    func getThumbnailImageFor(URL: NSURL) -> UIImage {
-        print("libraryUrls \(libraryUrls) \n \n")
-        let asset = AVURLAsset(URL: URL, options: nil)
-        let imageGenerator = AVAssetImageGenerator(asset: asset)
-        let cgImage = try! imageGenerator.copyCGImageAtTime(CMTimeMakeWithSeconds(2, 1), actualTime: nil)
-        let thumbnailImage = UIImage(CGImage: cgImage)
-        return thumbnailImage
     }
 }

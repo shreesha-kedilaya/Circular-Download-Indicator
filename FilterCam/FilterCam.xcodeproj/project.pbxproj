@@ -26,6 +26,13 @@
 		113BF9251D77047900F0475B /* GaleryCollectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 113BF9241D77047900F0475B /* GaleryCollectionViewController.swift */; };
 		113BF9271D7704EF00F0475B /* GaleryCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 113BF9261D7704EF00F0475B /* GaleryCollectionViewCell.swift */; };
 		113BF9291D7706D800F0475B /* GaleryCollectionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 113BF9281D7706D800F0475B /* GaleryCollectionViewModel.swift */; };
+		11B043E71D780C3700C2FCE0 /* FilterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B043E61D780C3700C2FCE0 /* FilterViewController.swift */; };
+		11B043E91D78148E00C2FCE0 /* PreviewVideoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B043E81D78148E00C2FCE0 /* PreviewVideoViewController.swift */; };
+		11B043EB1D782EB700C2FCE0 /* HomeTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B043EA1D782EB700C2FCE0 /* HomeTableViewCell.swift */; };
+		11B043ED1D782EE800C2FCE0 /* HomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B043EC1D782EE800C2FCE0 /* HomeViewController.swift */; };
+		11B043EF1D782EF700C2FCE0 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B043EE1D782EF700C2FCE0 /* HomeViewModel.swift */; };
+		11B043F11D782F0400C2FCE0 /* PreviewViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B043F01D782F0400C2FCE0 /* PreviewViewModel.swift */; };
+		11B043F31D783AE600C2FCE0 /* Async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B043F21D783AE600C2FCE0 /* Async.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -50,6 +57,13 @@
 		113BF9241D77047900F0475B /* GaleryCollectionViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GaleryCollectionViewController.swift; sourceTree = "<group>"; };
 		113BF9261D7704EF00F0475B /* GaleryCollectionViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GaleryCollectionViewCell.swift; sourceTree = "<group>"; };
 		113BF9281D7706D800F0475B /* GaleryCollectionViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GaleryCollectionViewModel.swift; sourceTree = "<group>"; };
+		11B043E61D780C3700C2FCE0 /* FilterViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FilterViewController.swift; sourceTree = "<group>"; };
+		11B043E81D78148E00C2FCE0 /* PreviewVideoViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PreviewVideoViewController.swift; sourceTree = "<group>"; };
+		11B043EA1D782EB700C2FCE0 /* HomeTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HomeTableViewCell.swift; sourceTree = "<group>"; };
+		11B043EC1D782EE800C2FCE0 /* HomeViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HomeViewController.swift; sourceTree = "<group>"; };
+		11B043EE1D782EF700C2FCE0 /* HomeViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
+		11B043F01D782F0400C2FCE0 /* PreviewViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PreviewViewModel.swift; sourceTree = "<group>"; };
+		11B043F21D783AE600C2FCE0 /* Async.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Async.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -86,6 +100,7 @@
 			children = (
 				113BF9171D76AAFF00F0475B /* CaptureSessionVC.swift */,
 				113BF91D1D76E4EA00F0475B /* SBMediaAlbumsVC.swift */,
+				11B043F21D783AE600C2FCE0 /* Async.swift */,
 				113BF91A1D76B09B00F0475B /* ViewControllers */,
 				113BF9191D76B09300F0475B /* TableViewCells */,
 				113BF91F1D7701B600F0475B /* CollectionViewCells */,
@@ -103,6 +118,7 @@
 			isa = PBXGroup;
 			children = (
 				112F85E41D7737FE007C8298 /* SettingsTableViewCell.swift */,
+				11B043EA1D782EB700C2FCE0 /* HomeTableViewCell.swift */,
 			);
 			path = TableViewCells;
 			sourceTree = "<group>";
@@ -110,6 +126,8 @@
 		113BF91A1D76B09B00F0475B /* ViewControllers */ = {
 			isa = PBXGroup;
 			children = (
+				11B043EC1D782EE800C2FCE0 /* HomeViewController.swift */,
+				11B043EE1D782EF700C2FCE0 /* HomeViewModel.swift */,
 				113BF9051D75CE6D00F0475B /* CameraCaptureViewController.swift */,
 				113BF91B1D76B0EC00F0475B /* CameraCaptureViewModel.swift */,
 				113BF9241D77047900F0475B /* GaleryCollectionViewController.swift */,
@@ -118,6 +136,9 @@
 				112F85DE1D772204007C8298 /* VideoPreviewViewModel.swift */,
 				112F85E21D7737CF007C8298 /* SettingsViewController.swift */,
 				112F85E61D7738A0007C8298 /* SettingsViewModel.swift */,
+				11B043E61D780C3700C2FCE0 /* FilterViewController.swift */,
+				11B043E81D78148E00C2FCE0 /* PreviewVideoViewController.swift */,
+				11B043F01D782F0400C2FCE0 /* PreviewViewModel.swift */,
 			);
 			path = ViewControllers;
 			sourceTree = "<group>";
@@ -204,15 +225,22 @@
 			files = (
 				112F85DD1D7721F7007C8298 /* VideoPreviewViewController.swift in Sources */,
 				113BF91C1D76B0EC00F0475B /* CameraCaptureViewModel.swift in Sources */,
+				11B043F31D783AE600C2FCE0 /* Async.swift in Sources */,
+				11B043ED1D782EE800C2FCE0 /* HomeViewController.swift in Sources */,
+				11B043EF1D782EF700C2FCE0 /* HomeViewModel.swift in Sources */,
 				112F85E11D7723CC007C8298 /* PermissionManager.swift in Sources */,
 				113BF9061D75CE6D00F0475B /* CameraCaptureViewController.swift in Sources */,
 				112F85E51D7737FE007C8298 /* SettingsTableViewCell.swift in Sources */,
 				112F85DF1D772204007C8298 /* VideoPreviewViewModel.swift in Sources */,
+				11B043EB1D782EB700C2FCE0 /* HomeTableViewCell.swift in Sources */,
 				113BF91E1D76E4EA00F0475B /* SBMediaAlbumsVC.swift in Sources */,
 				113BF9181D76AAFF00F0475B /* CaptureSessionVC.swift in Sources */,
 				113BF9271D7704EF00F0475B /* GaleryCollectionViewCell.swift in Sources */,
+				11B043F11D782F0400C2FCE0 /* PreviewViewModel.swift in Sources */,
 				113BF9211D7701CF00F0475B /* FilterCollectionViewCell.swift in Sources */,
+				11B043E71D780C3700C2FCE0 /* FilterViewController.swift in Sources */,
 				113BF9251D77047900F0475B /* GaleryCollectionViewController.swift in Sources */,
+				11B043E91D78148E00C2FCE0 /* PreviewVideoViewController.swift in Sources */,
 				112F85E71D7738A0007C8298 /* SettingsViewModel.swift in Sources */,
 				112F85E31D7737CF007C8298 /* SettingsViewController.swift in Sources */,
 				113BF9291D7706D800F0475B /* GaleryCollectionViewModel.swift in Sources */,

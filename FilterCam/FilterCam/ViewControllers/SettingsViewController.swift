@@ -19,13 +19,21 @@ class SettingsViewController: UIViewController {
     var viewModel = SettingsViewModel()
     weak var delegate: SettingsViewControllerDelegate?
 
-    private let settingsText = ["Camera", "Video"]
+    private let settingsText = ["Photo", "Video"]
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        title = "Settings"
+
         settingsTableView.delegate = self
         settingsTableView.dataSource = self
         // Do any additional setup after loading the view.
+    }
+    @IBOutlet weak var dismissButton: UIButton!
+    
+    @IBAction func dismissButtonClicked(sender: AnyObject) {
+        dismissViewControllerAnimated(true, completion: nil)
     }
 }
 

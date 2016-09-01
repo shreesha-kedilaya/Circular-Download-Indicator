@@ -7,6 +7,8 @@
 //
 
 import UIKit
+import AVFoundation
+import Photos
 
 private let reuseIdentifier = "GaleryCollectionViewCell"
 
@@ -20,12 +22,17 @@ class GaleryCollectionViewController: UIViewController, UICollectionViewDelegate
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        title = "Gallery"
+
         permissionService = PermissionType.Photos.permissionService
         permissionService?.requestPermission({ (status) in
             switch status {
             case .Authorized:
                 self.viewModel.fetchLibraryAssets {
-                    self.videoCollectionView.reloadData()
+                    Async.main{
+                        self.videoCollectionView.reloadData()
+                        print("collection view reloaded \n\n\n")
+                    }
                 }
             default:()
             }
@@ -43,23 +50,28 @@ class GaleryCollectionViewController: UIViewController, UICollectionViewDelegate
     }
 
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return viewModel.libraryUrls.count
+        return viewModel.libraryInfo.count
     }
 
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier(reuseIdentifier, forIndexPath: indexPath) as! GaleryCollectionViewCell
-        cell.videoImageView.image = viewModel.getThumbnailImageFor(viewModel.libraryUrls[indexPath.row])
+        cell.videoURL = viewModel.libraryInfo[indexPath.item].1
+        cell.applyThumbnailImage()
         return cell
     }
 
     // MARK: UICollectionViewDelegate
 
     func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAtIndexPath indexPath: NSIndexPath) -> CGSize {
-        return CGSize(width: 100, height: 100)
+        return CGSize(width: 150, height: 150)
+    }
+    func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAtIndex section: Int) -> CGFloat {
+        return 25
     }
 
     func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
         let previewVC = storyboard?.instantiateViewControllerWithIdentifier("VideoPreviewViewController") as! VideoPreviewViewController
+        previewVC.playingPhAsset = viewModel.libraryInfo[indexPath.item].0
         navigationController?.pushViewController(previewVC, animated: true)
     }
 }

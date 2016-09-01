@@ -17,7 +17,7 @@ class CameraCaptureViewController: UIViewController {
 
     private lazy var cameraCaptureSession: AVCaptureSession = {
         let session = AVCaptureSession()
-        session.addObserver(self, forKeyPath: AVCaptureSessionRuntimeErrorNotification, options: NSKeyValueObservingOptions.New, context: nil)
+
         if session.canSetSessionPreset(self.viewModel.resolutionQuality) {
             session.sessionPreset = self.viewModel.resolutionQuality
         } else {
@@ -26,6 +26,7 @@ class CameraCaptureViewController: UIViewController {
         return session
     }()
 
+    @IBOutlet weak var filterButton: UIButton!
     private var inputDevice: AVCaptureDevice?
     private var movieFileOutput: AVCaptureMovieFileOutput?
     private var cameraStillImageOutput = AVCaptureStillImageOutput()
@@ -52,6 +53,8 @@ class CameraCaptureViewController: UIViewController {
         previewLayerFrameView.layoutIfNeeded()
         let frame = previewLayerFrameView.frame
         cameraPreviewLayer.frame = frame
+
+        title = "Capture"
 
         // Do any additional setup after loading the view, typically from a nib.
     }
@@ -91,6 +94,8 @@ class CameraCaptureViewController: UIViewController {
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
 
+        cameraCaptureSession.addObserver(self, forKeyPath: AVCaptureSessionRuntimeErrorNotification, options: NSKeyValueObservingOptions.New, context: nil)
+
         let devices = AVCaptureDevice.devices()
 
         for device in devices {
@@ -106,9 +111,9 @@ class CameraCaptureViewController: UIViewController {
 
         cameraPreviewLayer.session = cameraCaptureSession
         cameraPreviewLayer.videoGravity = AVLayerVideoGravityResizeAspectFill
-        view.layer.masksToBounds = true
+        previewLayerFrameView.layer.masksToBounds = true
 
-        view.layer.insertSublayer(cameraPreviewLayer, atIndex: 0)
+        previewLayerFrameView.layer.insertSublayer(cameraPreviewLayer, atIndex: 0)
 
         let permissionService = PermissionType.Camera.permissionService
         permissionService.requestPermission { (status) in
@@ -168,6 +173,7 @@ class CameraCaptureViewController: UIViewController {
 
         if let media : AVCaptureDeviceInput = try! AVCaptureDeviceInput.init(device: videoDevice) {
 
+            captureCameraInput = nil
             captureCameraInput = media
 
             if cameraCaptureSession.canAddInput(captureCameraInput) {
@@ -180,6 +186,9 @@ class CameraCaptureViewController: UIViewController {
         }
     }
 
+    @IBAction func didTapOnFilter(sender: AnyObject) {
+        
+    }
 
     @IBAction func settingsDIdTap(sender: AnyObject) {
         let settingsVC = storyboard?.instantiateViewControllerWithIdentifier("SettingsViewController") as? SettingsViewController
@@ -189,6 +198,8 @@ class CameraCaptureViewController: UIViewController {
     }
     override func viewWillDisappear(animated: Bool) {
         super.viewWillDisappear(animated)
+        NSNotificationCenter.defaultCenter().removeObserver(self)
+        cameraCaptureSession.removeObserver(self, forKeyPath: AVCaptureSessionRuntimeErrorNotification)
         cameraCaptureSession.stopRunning()
     }
 
@@ -217,7 +228,7 @@ class CameraCaptureViewController: UIViewController {
         case .Video:
             if let movieFileOutput = movieFileOutput {
                 if movieFileOutput.recording {
-                    captureButton.setTitle("Recording", forState: .Normal)
+                    captureButton.setTitle("Recording....", forState: .Normal)
                 } else {
                     captureButton.setTitle("Start recording", forState: .Normal)
                 }
@@ -261,6 +272,30 @@ class CameraCaptureViewController: UIViewController {
 
     private func reloadAllTheInputs() {
 
+    }
+
+    private func askSaveOrPreview() {
+        let alertController = UIAlertController(title: "Video", message: "Video is Recorded", preferredStyle: .ActionSheet)
+
+        let saveAction = UIAlertAction(title: "Save", style: .Default) { (action) in
+
+        }
+
+        let discardAction = UIAlertAction(title: "Discard", style: .Default) { (action) in
+
+        }
+
+        let previewAction = UIAlertAction(title: "Preview", style: .Default) { (action) in
+            let previewVC = self.storyboard?.instantiateViewControllerWithIdentifier("PreviewVideoViewController") as? PreviewVideoViewController
+
+            self.navigationController?.pushViewController(previewVC!, animated: true)
+        }
+
+        alertController.addAction(previewAction)
+        alertController.addAction(discardAction)
+        alertController.addAction(saveAction)
+
+        presentViewController(alertController, animated: true, completion: nil)
     }
 }
 
