@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="10116" systemVersion="15E65" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" initialViewController="Zbn-i7-wtr">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="10116" systemVersion="15G31" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" initialViewController="Zbn-i7-wtr">
     <dependencies>
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="10085"/>
@@ -38,7 +38,7 @@
                         <subviews>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" scrollEnabled="NO" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="TDf-yC-1ef">
                                 <rect key="frame" x="0.0" y="234" width="375" height="200"/>
-                                <color key="backgroundColor" cocoaTouchSystemColor="viewFlipsideBackgroundColor"/>
+                                <color key="backgroundColor" red="0.1215686275" green="0.12941176469999999" blue="0.14117647059999999" alpha="1" colorSpace="calibratedRGB"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="200" id="EDb-tn-ApX"/>
                                 </constraints>
@@ -53,7 +53,7 @@
                                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5Av-TG-XBp">
                                                     <rect key="frame" x="0.0" y="0.0" width="375" height="43"/>
                                                     <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                                    <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
+                                                    <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                                     <nil key="highlightedColor"/>
                                                 </label>
                                             </subviews>
@@ -75,7 +75,7 @@
                                 </connections>
                             </tableView>
                         </subviews>
-                        <color key="backgroundColor" cocoaTouchSystemColor="viewFlipsideBackgroundColor"/>
+                        <color key="backgroundColor" red="0.1215686275" green="0.12941176469999999" blue="0.14117647059999999" alpha="1" colorSpace="calibratedRGB"/>
                         <constraints>
                             <constraint firstItem="TDf-yC-1ef" firstAttribute="centerY" secondItem="WFe-sW-1Bz" secondAttribute="centerY" id="Dtc-On-YfS"/>
                             <constraint firstItem="TDf-yC-1ef" firstAttribute="leading" secondItem="WFe-sW-1Bz" secondAttribute="leading" id="Exo-dz-D8q"/>
@@ -106,6 +106,17 @@
                         <subviews>
                             <view clearsContextBeforeDrawing="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="VOv-WQ-YGZ">
                                 <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                                <subviews>
+                                    <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="cdP-W2-Gkt">
+                                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                                    </imageView>
+                                </subviews>
+                                <constraints>
+                                    <constraint firstAttribute="trailing" secondItem="cdP-W2-Gkt" secondAttribute="trailing" id="Cip-OO-U3Z"/>
+                                    <constraint firstItem="cdP-W2-Gkt" firstAttribute="leading" secondItem="VOv-WQ-YGZ" secondAttribute="leading" id="QSb-0k-MFr"/>
+                                    <constraint firstItem="cdP-W2-Gkt" firstAttribute="top" secondItem="VOv-WQ-YGZ" secondAttribute="top" id="bPy-g1-MM9"/>
+                                    <constraint firstAttribute="bottom" secondItem="cdP-W2-Gkt" secondAttribute="bottom" id="fTl-pZ-qjf"/>
+                                </constraints>
                             </view>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="4Wl-sz-q1a">
                                 <rect key="frame" x="289" y="602" width="70" height="30"/>
@@ -210,6 +221,7 @@
                         <outlet property="captureButton" destination="YJn-Uv-ByA" id="v3o-6l-Xza"/>
                         <outlet property="filterButton" destination="N8s-gB-e7o" id="4Sf-Hl-7Wi"/>
                         <outlet property="flipButton" destination="mTv-44-Qb1" id="ohs-u6-5kA"/>
+                        <outlet property="previewImageView" destination="cdP-W2-Gkt" id="3n7-Pa-8p4"/>
                         <outlet property="previewLayerFrameView" destination="VOv-WQ-YGZ" id="cOL-Q8-3xa"/>
                     </connections>
                 </viewController>
@@ -463,9 +475,29 @@
                         <subviews>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="7ZK-RU-zGP">
                                 <rect key="frame" x="0.0" y="567" width="375" height="100"/>
+                                <subviews>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="m4f-an-QCZ">
+                                        <rect key="frame" x="292" y="35" width="53" height="30"/>
+                                        <state key="normal" title="Discard"/>
+                                        <connections>
+                                            <action selector="discardButtonDidClick:" destination="oIk-pQ-JLt" eventType="touchUpInside" id="U7p-XH-OSe"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="1hE-MI-Jub">
+                                        <rect key="frame" x="30" y="35" width="54" height="30"/>
+                                        <state key="normal" title="  Save   "/>
+                                        <connections>
+                                            <action selector="saveButtonDidClick:" destination="oIk-pQ-JLt" eventType="touchUpInside" id="GSy-Vw-RDN"/>
+                                        </connections>
+                                    </button>
+                                </subviews>
                                 <color key="backgroundColor" red="0.24531436609999999" green="0.72272147019999999" blue="0.0068309570040000003" alpha="1" colorSpace="calibratedRGB"/>
                                 <constraints>
+                                    <constraint firstItem="1hE-MI-Jub" firstAttribute="centerY" secondItem="7ZK-RU-zGP" secondAttribute="centerY" id="Bwp-Ms-U4u"/>
+                                    <constraint firstItem="m4f-an-QCZ" firstAttribute="centerY" secondItem="7ZK-RU-zGP" secondAttribute="centerY" id="Dmh-9m-cuC"/>
+                                    <constraint firstItem="1hE-MI-Jub" firstAttribute="leading" secondItem="7ZK-RU-zGP" secondAttribute="leading" constant="30" id="MdV-Vv-sD6"/>
                                     <constraint firstAttribute="height" constant="100" id="Zek-VI-7Fg"/>
+                                    <constraint firstAttribute="trailing" secondItem="m4f-an-QCZ" secondAttribute="trailing" constant="30" id="cKm-UP-7KQ"/>
                                 </constraints>
                             </view>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="kA3-5r-wFd">
@@ -543,10 +575,12 @@
                     </view>
                     <simulatedScreenMetrics key="simulatedDestinationMetrics" type="retina47"/>
                     <connections>
+                        <outlet property="discardButton" destination="m4f-an-QCZ" id="7au-Ls-d7h"/>
                         <outlet property="endLabel" destination="mtB-ks-vdo" id="qbq-QE-Xy8"/>
                         <outlet property="frameCollectionView" destination="7ZK-RU-zGP" id="eo8-Al-xxJ"/>
                         <outlet property="playButton" destination="dvY-UD-4i1" id="xTo-Xr-rly"/>
                         <outlet property="progressView" destination="4aW-8Y-BGs" id="MRC-B3-6f9"/>
+                        <outlet property="saveButton" destination="1hE-MI-Jub" id="mb3-Cg-2Uq"/>
                         <outlet property="startLabel" destination="zqT-ZV-u9P" id="bNy-wC-ME9"/>
                         <outlet property="videoButton" destination="cer-mM-iYP" id="Bha-fQ-3sf"/>
                         <outlet property="videoPreviewView" destination="kA3-5r-wFd" id="TSg-Ul-WGg"/>

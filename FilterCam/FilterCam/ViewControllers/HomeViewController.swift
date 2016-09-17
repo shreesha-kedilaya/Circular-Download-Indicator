@@ -11,7 +11,7 @@ import UIKit
 class HomeViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
 
     @IBOutlet weak var tableView: UITableView!
-    private let screenTexts = ["Camera", "Gallery"]
+    private let screenTexts = ["Video", "Gallery"]
     private lazy var viewModel = HomeViewModel()
     override func viewDidLoad() {
         super.viewDidLoad()

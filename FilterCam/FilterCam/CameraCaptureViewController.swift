@@ -15,35 +15,19 @@ private let timeScaleToGet : Int32 = 10000
 
 class CameraCaptureViewController: UIViewController {
 
-    private lazy var cameraCaptureSession: AVCaptureSession = {
-        let session = AVCaptureSession()
-
-        if session.canSetSessionPreset(self.viewModel.resolutionQuality) {
-            session.sessionPreset = self.viewModel.resolutionQuality
-        } else {
-            print("Failed to set the preset value")
-        }
-        return session
-    }()
-
+    @IBOutlet weak var previewImageView: UIImageView!
     @IBOutlet weak var filterButton: UIButton!
-    private var inputDevice: AVCaptureDevice?
     private var movieFileOutput: AVCaptureMovieFileOutput?
-    private var cameraStillImageOutput = AVCaptureStillImageOutput()
-    private var captureCameraInput: AVCaptureDeviceInput?
+
+    private var coreImageView: CoreImageView?
 
     private var fileNumber = 0
-
-    private lazy var cameraPreviewLayer = AVCaptureVideoPreviewLayer()
-
-    private lazy var videoCaptureOutput = AVCaptureVideoDataOutput()
-//    private lazy var mediaTracks = [AVMutableCompositionTrack]()
-//    private lazy var mediaInstructions = [AVMutableVideoCompositionLayerInstruction]()
-//    private lazy var videoAssets = [AVURLAsset?]()
 
     @IBOutlet weak var previewLayerFrameView: UIView!
     @IBOutlet weak var flipButton: UIButton!
     @IBOutlet weak var captureButton: UIButton!
+
+    private var videoFilterHandler: VideoBufferHandler?
 
     private lazy var viewModel = CameraCaptureViewModel()
 
@@ -51,139 +35,44 @@ class CameraCaptureViewController: UIViewController {
         super.viewDidLoad()
 
         previewLayerFrameView.layoutIfNeeded()
-        let frame = previewLayerFrameView.frame
-        cameraPreviewLayer.frame = frame
+        previewImageView.hidden = true
+        coreImageView = CoreImageView(frame: view.frame)
+        view.insertSubview(coreImageView!, atIndex: 0)
+
+        videoFilterHandler = VideoBufferHandler()
+
+        videoFilterHandler?.bufferCallBack = handleTheOutputBuffer
 
         title = "Capture"
 
         // Do any additional setup after loading the view, typically from a nib.
     }
 
-    override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
-        if keyPath == AVCaptureSessionRuntimeErrorNotification {
-            let cameraSession = object as? AVCaptureSession
-
-            guard let captureSession = cameraSession else {
-                return
-            }
-
-            if captureSession.running {
-                print("captureSession running")
-            } else if captureSession.interrupted {
-                print("captureSession interupted")
-            }
-        }
-    }
-
     override func viewDidAppear(animated: Bool) {
         super.viewDidAppear(animated)
 
-        captureButton.setTitle((viewModel.captureMode == .Camera ? "Capture": "Start recording"), forState: .Normal)
+        coreImageView?.frame = view.frame
 
-        let permissionService = PermissionType.Camera.permissionService
-        permissionService.requestPermission { (status) in
-            switch status {
-            case .Authorized:
-                self.cameraCaptureSession.startRunning()
-            default: ()
-                //Show some alert
-            }
+        if let coreImageView = coreImageView {
+            view.sendSubviewToBack(coreImageView)
         }
+
+        captureButton.setTitle((viewModel.captureMode == .Camera ? "Capture": "Start recording"), forState: .Normal)
     }
 
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
-
-        cameraCaptureSession.addObserver(self, forKeyPath: AVCaptureSessionRuntimeErrorNotification, options: NSKeyValueObservingOptions.New, context: nil)
-
-        let devices = AVCaptureDevice.devices()
-
-        for device in devices {
-            print((device as! AVCaptureDevice).localizedName)
-        }
-
-        inputDevice = viewModel.getCameraDevice(AVMediaTypeVideo, devicePosition: viewModel.currentDevicePosition)
-        captureCameraInput = try? AVCaptureDeviceInput(device: inputDevice)
-
-        if cameraCaptureSession.canAddInput(captureCameraInput) {
-            cameraCaptureSession.addInput(captureCameraInput)
-        }
-
-        cameraPreviewLayer.session = cameraCaptureSession
-        cameraPreviewLayer.videoGravity = AVLayerVideoGravityResizeAspectFill
-        previewLayerFrameView.layer.masksToBounds = true
-
-        previewLayerFrameView.layer.insertSublayer(cameraPreviewLayer, atIndex: 0)
-
-        let permissionService = PermissionType.Camera.permissionService
-        permissionService.requestPermission { (status) in
-            switch status {
-            case .Authorized:
-                self.cameraCaptureSession.startRunning()
-            default: ()
-            }
-        }
+        videoFilterHandler?.startSession()
     }
 
-    private func setTheCameraStillImageOutputs() {
-        let outputSettings = [AVVideoCodecKey:AVVideoCodecJPEG]
-        cameraStillImageOutput.outputSettings = outputSettings
-
-        if cameraCaptureSession.canAddOutput(cameraStillImageOutput) {
-            cameraCaptureSession.addOutput(cameraStillImageOutput)
-        }
+    override func viewWillDisappear(animated: Bool) {
+        super.viewWillDisappear(animated)
+        NSNotificationCenter.defaultCenter().removeObserver(self)
+        videoFilterHandler?.stopSession()
     }
 
-    private func setTheVideoOutput() {
-        let movieFileOutput: AVCaptureMovieFileOutput = AVCaptureMovieFileOutput()
-        videoCaptureOutput.videoSettings = [(kCVPixelBufferPixelFormatTypeKey as NSString) : NSNumber(unsignedInt: kCVPixelFormatType_420YpCbCr8BiPlanarFullRange)]
-        videoCaptureOutput.alwaysDiscardsLateVideoFrames = true
-        videoCaptureOutput.setSampleBufferDelegate(self, queue: dispatch_queue_create("sample buffer delegate", DISPATCH_QUEUE_SERIAL))
-
-        cameraCaptureSession.addOutput(videoCaptureOutput)
-        if cameraCaptureSession.canAddOutput(movieFileOutput){
-            cameraCaptureSession.addOutput(movieFileOutput)
-            movieFileOutput.maxRecordedDuration = CMTimeMakeWithSeconds(maxTimeLimit, timeScaleToGet)
-            self.movieFileOutput = movieFileOutput
-        }
-    }
-
-    private func changeTheDeviceType() {
-
-        cameraCaptureSession.beginConfiguration()
-        cameraCaptureSession.removeInput(captureCameraInput)
-        switch viewModel.currentDevicePosition {
-        case .Front:
-            viewModel.currentDevicePosition = .Back
-            configureMediaInput(viewModel.currentDevicePosition)
-        case .Back:
-            viewModel.currentDevicePosition = .Front
-            configureMediaInput(viewModel.currentDevicePosition)
-        default: ()
-        }
-        cameraCaptureSession.commitConfiguration()
-    }
     @IBAction func flipImageDidTap(sender: AnyObject) {
-        changeTheDeviceType()
-    }
-
-    func configureMediaInput(devicePosition: AVCaptureDevicePosition) {
-
-        let videoDevice = viewModel.getCameraDevice(AVMediaTypeVideo, devicePosition: devicePosition)
-
-        if let media : AVCaptureDeviceInput = try! AVCaptureDeviceInput.init(device: videoDevice) {
-
-            captureCameraInput = nil
-            captureCameraInput = media
-
-            if cameraCaptureSession.canAddInput(captureCameraInput) {
-                cameraCaptureSession.addInput(captureCameraInput)
-            } else {
-                print("Failed to add media input.")
-            }
-        } else {
-            print("Failed to create media capture device.")
-        }
+        //TODO: Change the front and back camera
     }
 
     @IBAction func didTapOnFilter(sender: AnyObject) {
@@ -196,24 +85,13 @@ class CameraCaptureViewController: UIViewController {
         settingsVC?.delegate = self
         presentViewController(settingsVC!, animated: true, completion: nil)
     }
-    override func viewWillDisappear(animated: Bool) {
-        super.viewWillDisappear(animated)
-        NSNotificationCenter.defaultCenter().removeObserver(self)
-        cameraCaptureSession.removeObserver(self, forKeyPath: AVCaptureSessionRuntimeErrorNotification)
-        cameraCaptureSession.stopRunning()
-    }
 
     override func didRotateFromInterfaceOrientation(fromInterfaceOrientation: UIInterfaceOrientation) {
-        
-        previewLayerFrameView.layoutIfNeeded()
-        let frame = previewLayerFrameView.frame
-        cameraPreviewLayer.frame = frame
+        coreImageView?.frame = view.frame
     }
 
     override func willRotateToInterfaceOrientation(toInterfaceOrientation: UIInterfaceOrientation, duration: NSTimeInterval) {
-        previewLayerFrameView.layoutIfNeeded()
-        let frame = previewLayerFrameView.frame
-        cameraPreviewLayer.frame = frame
+        coreImageView?.frame = view.frame
     }
 
     @IBAction func captureTheSession(sender: AnyObject) {
@@ -223,11 +101,11 @@ class CameraCaptureViewController: UIViewController {
     private func handelCaptureAction() {
 
         switch viewModel.captureMode {
-        case .Camera:
-            processImage()
+        case .Camera:()
+
         case .Video:
-            if let movieFileOutput = movieFileOutput {
-                if movieFileOutput.recording {
+            if let videoFilterHandler = videoFilterHandler {
+                if videoFilterHandler.isrecordingVideo{
                     captureButton.setTitle("Recording....", forState: .Normal)
                 } else {
                     captureButton.setTitle("Start recording", forState: .Normal)
@@ -238,41 +116,43 @@ class CameraCaptureViewController: UIViewController {
     }
 
     func processVideo() {
-        let paths = NSSearchPathForDirectoriesInDomains(NSSearchPathDirectory.DocumentDirectory, NSSearchPathDomainMask.UserDomainMask, true)
 
-        let documentDirectory = paths.first
-        let dataPath = documentDirectory?.stringByAppendingString("FileCam \(fileNumber).mov")
-
-        if let movieFileOutput = movieFileOutput {
-            if !movieFileOutput.recording {
-                print("recoding")
-                movieFileOutput.connectionWithMediaType(AVMediaTypeVideo).videoOrientation =
-                    AVCaptureVideoOrientation(rawValue: cameraPreviewLayer.connection.videoOrientation.rawValue)!
-                movieFileOutput.startRecordingToOutputFileURL( NSURL(string: dataPath!), recordingDelegate: self)
-            } else {
-                print("recoding stopped")
-                movieFileOutput.stopRecording()
-            }
-        }
+        let outputFilePath = NSURL(fileURLWithPath: NSTemporaryDirectory()).URLByAppendingPathComponent("SBMov" + String(fileNumber) + ".mov")
 
         fileNumber = fileNumber + 1
+
+        if let videoFilterHandler = videoFilterHandler {
+            if videoFilterHandler.isrecordingVideo {
+                videoFilterHandler.stopVideoRecording{ (savedUrl) in
+                    self.handleAfterRecordingVideo(savedUrl)
+                }
+            } else {
+                videoFilterHandler.startVideoRecording(withPath: outputFilePath.path!)
+            }
+        }
     }
 
-    private func processImage() {
-        if let videoConnection = cameraStillImageOutput.connectionWithMediaType(AVMediaTypeVideo) {
-            cameraStillImageOutput.captureStillImageAsynchronouslyFromConnection(videoConnection) {
-                (imageDataSampleBuffer, error) -> Void in
-                let image = UIImage(data: AVCaptureStillImageOutput.jpegStillImageNSDataRepresentation(imageDataSampleBuffer))
-                if let image = image {
+    func handleAfterRecordingVideo(saveUrl: NSURL) {
 
-                }
-            }
+        Async.main {
+            let videoPreviewViewController = self.storyboard?.instantiateViewControllerWithIdentifier("VideoPreviewViewController") as! VideoPreviewViewController
+            videoPreviewViewController.videoPreviewType = .VideoPreview
+            videoPreviewViewController.savedTempUrl = saveUrl
+            self.navigationController?.pushViewController(videoPreviewViewController, animated: true)
         }
     }
 
     private func reloadAllTheInputs() {
 
     }
+
+    private func handleTheOutputBuffer(sampleBuffer: CMSampleBuffer, transform: CGAffineTransform) {
+        let ciimage = CIImage(buffer: sampleBuffer).imageByApplyingTransform(AVCaptureDevicePosition.Front.transform)
+        let filter = pixellate(5)
+        let image = filter(ciimage)
+        coreImageView?.image = image
+    }
+
 
     private func askSaveOrPreview() {
         let alertController = UIAlertController(title: "Video", message: "Video is Recorded", preferredStyle: .ActionSheet)
@@ -309,18 +189,55 @@ extension CameraCaptureViewController: SettingsViewControllerDelegate {
     }
 }
 
+extension CGAffineTransform {
 
-extension CameraCaptureViewController: AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptureFileOutputRecordingDelegate {
+    init(rotatingWithAngle angle: CGFloat) {
+        let t = CGAffineTransformMakeRotation(angle)
+        self.init(a: t.a, b: t.b, c: t.c, d: t.d, tx: t.tx, ty: t.ty)
 
-    func captureOutput(captureOutput: AVCaptureFileOutput!, didStartRecordingToOutputFileAtURL fileURL: NSURL!, fromConnections connections: [AnyObject]!) {
+    }
+    init(scaleX sx: CGFloat, scaleY sy: CGFloat) {
+        let t = CGAffineTransformMakeScale(sx, sy)
+        self.init(a: t.a, b: t.b, c: t.c, d: t.d, tx: t.tx, ty: t.ty)
 
     }
 
-    func captureOutput(captureOutput: AVCaptureOutput!, didOutputSampleBuffer sampleBuffer: CMSampleBuffer!, fromConnection connection: AVCaptureConnection!) {
+    func scale(sx: CGFloat, sy: CGFloat) -> CGAffineTransform {
+        return CGAffineTransformScale(self, sx, sy)
+    }
+    func rotate(angle: CGFloat) -> CGAffineTransform {
+        return CGAffineTransformRotate(self, angle)
+    }
+}
 
+extension CIImage {
+    convenience init(buffer: CMSampleBuffer) {
+        self.init(CVPixelBuffer: CMSampleBufferGetImageBuffer(buffer)!)
+    }
+}
+
+extension CGRect {
+    var center: CGPoint {
+        return CGPoint(x: midX, y: midY)
+    }
+}
+
+extension AVCaptureDevicePosition {
+    var transform: CGAffineTransform {
+        switch self {
+        case .Front:
+            return CGAffineTransform(rotatingWithAngle: -CGFloat(M_PI_2)).scale(1, sy: -1)
+        case .Back:
+            return CGAffineTransform(rotatingWithAngle: -CGFloat(M_PI_2))
+        default:
+            return CGAffineTransformIdentity
+
+        }
     }
 
-    func captureOutput(captureOutput: AVCaptureFileOutput!, didFinishRecordingToOutputFileAtURL outputFileURL: NSURL!, fromConnections connections: [AnyObject]!, error: NSError!) {
-        
+    var device: AVCaptureDevice? {
+        return AVCaptureDevice.devicesWithMediaType(AVMediaTypeVideo).filter {
+            $0.position == self
+            }.first as? AVCaptureDevice
     }
 }

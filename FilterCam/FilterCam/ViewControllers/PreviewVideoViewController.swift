@@ -11,6 +11,7 @@ import UIKit
 class PreviewVideoViewController: UIViewController {
 
     @IBOutlet weak var videoPlayerView: UIView!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
 
