@@ -15,7 +15,7 @@ class CoreImageView: GLKView {
             display()
         }
     }
-    let coreImageContext: CIContext
+    var coreImageContext: CIContext
 
     override convenience init(frame: CGRect) {
         let eaglContext = EAGLContext(API: EAGLRenderingAPI.OpenGLES2)

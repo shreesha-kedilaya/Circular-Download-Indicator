@@ -39,6 +39,7 @@ class VideoBufferHandler: NSObject, CaptureDelagateProtocol {
     var videoTransform = CGAffineTransformIdentity
     var videoCreator: VideoCreator?
     var isrecordingVideo = false
+    var numberOfFrames = 0
 
     override init() {
         super.init()
@@ -63,6 +64,7 @@ class VideoBufferHandler: NSObject, CaptureDelagateProtocol {
     }
 
     private func addInputsToCameraSession() {
+
         cameraCaptureSession.addObserver(self, forKeyPath: AVCaptureSessionRuntimeErrorNotification, options: NSKeyValueObservingOptions.New, context: nil)
 
         let devices = AVCaptureDevice.devices()
@@ -125,6 +127,9 @@ class VideoBufferHandler: NSObject, CaptureDelagateProtocol {
 
     func stopSession() {
         cameraCaptureSession.stopRunning()
+    }
+
+    func removeObservers() {
         cameraCaptureSession.removeObserver(self, forKeyPath: AVCaptureSessionRuntimeErrorNotification)
     }
 
@@ -169,29 +174,6 @@ class VideoBufferHandler: NSObject, CaptureDelagateProtocol {
         }
     }
 
-    func startVideoRecording(withPath path: String) {
-        videoCreator = VideoCreator()
-        videoCreator?.pixelFormat = kCVPixelFormatType_32ARGB
-        videoCreator?.writingQueue = dispatch_get_main_queue()
-
-        videoCreator?.startWrting(atPath: path, size: UIScreen.mainScreen().bounds.size, videoFPS: 40)
-        isrecordingVideo = true
-    }
-
-    func stopVideoRecording(handler: (savedUrl: NSURL) -> ()) {
-
-        isrecordingVideo = false
-        guard let videoCreator = videoCreator else {
-            return
-        }
-
-        if videoCreator.sessionRunning {
-            videoCreator.stopWriting { (url: NSURL) -> Void in
-                handler(savedUrl: url)
-            }
-        }
-    }
-
     private func configureMediaInput(devicePosition: AVCaptureDevicePosition) {
 
         let videoDevice = getCameraDevice(AVMediaTypeVideo, devicePosition: devicePosition)
@@ -212,6 +194,7 @@ class VideoBufferHandler: NSObject, CaptureDelagateProtocol {
     }
 
     func didOutput(sampleBuffer: CMSampleBuffer) {
+        numberOfFrames += 1
         if let bufferCallBack = bufferCallBack {
             bufferCallBack(sampleBuffer, videoTransform)
         }

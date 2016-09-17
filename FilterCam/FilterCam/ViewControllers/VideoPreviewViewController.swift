@@ -81,7 +81,7 @@ class VideoPreviewViewController: UIViewController {
 
         let paths = NSSearchPathForDirectoriesInDomains(NSSearchPathDirectory.DocumentDirectory, NSSearchPathDomainMask.UserDomainMask, true)
         let documentDirectory = paths.first
-        let dataPath = documentDirectory?.stringByAppendingString("FileCam \(fileNumber).mov")
+        let dataPath = documentDirectory?.stringByAppendingString("FilterCam \(fileNumber).mov")
 
         fileNumber += 1
 

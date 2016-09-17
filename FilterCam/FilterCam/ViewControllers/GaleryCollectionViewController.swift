@@ -41,8 +41,6 @@ class GaleryCollectionViewController: UIViewController, UICollectionViewDelegate
 
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
-
-
     }
 
     func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int {
