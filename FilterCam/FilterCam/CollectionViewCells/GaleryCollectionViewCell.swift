@@ -15,11 +15,11 @@ class GaleryCollectionViewCell: UICollectionViewCell {
     @IBOutlet weak var videoImageView: UIImageView!
     @IBOutlet weak var playButton: UIButton!
 
-    var videoURL: NSURL?
+    var videoURL: URL?
 
     override func awakeFromNib() {
         super.awakeFromNib()
-        playButton.userInteractionEnabled = false
+        playButton.isUserInteractionEnabled = false
         videoImageView.image = UIImage(named: "placeHolderVideo")
     }
 
@@ -27,7 +27,7 @@ class GaleryCollectionViewCell: UICollectionViewCell {
         print("applyThumbnailImage called")
         videoImageView.image = UIImage(named: "placeHolderVideo")
         if let videoURL = videoURL {
-            Async.global(DISPATCH_QUEUE_PRIORITY_BACKGROUND) {
+            Async.global(DispatchQoS.QoSClass.background) {
                 let image = self.getThumbnailImageFor(videoURL)
                 Async.main{
                     self.videoImageView.image = image
@@ -36,16 +36,16 @@ class GaleryCollectionViewCell: UICollectionViewCell {
         }
     }
 
-    func getThumbnailImageFor(URL: NSURL) -> UIImage {
+    func getThumbnailImageFor(_ URL: Foundation.URL) -> UIImage {
 
-        let asset = AVURLAsset(URL: URL, options: nil)
+        let asset = AVURLAsset(url: URL, options: nil)
         let imageGenerator = AVAssetImageGenerator(asset: asset)
         imageGenerator.appliesPreferredTrackTransform = true
-        imageGenerator.maximumSize = UIScreen.mainScreen().bounds.size
+        imageGenerator.maximumSize = UIScreen.main.bounds.size
 
-        let cgImage = try! imageGenerator.copyCGImageAtTime(CMTimeMakeWithSeconds(2, 1), actualTime: nil)
-        var thumbnailImage = UIImage(CGImage: cgImage)
-        thumbnailImage = thumbnailImage.imageWithRenderingMode(.AlwaysOriginal)
+        let cgImage = try! imageGenerator.copyCGImage(at: CMTimeMakeWithSeconds(2, 1), actualTime: nil)
+        var thumbnailImage = UIImage(cgImage: cgImage)
+        thumbnailImage = thumbnailImage.withRenderingMode(.alwaysOriginal)
 
         return thumbnailImage
     }

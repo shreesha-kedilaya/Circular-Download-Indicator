@@ -25,11 +25,11 @@ class PreviewVideoViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
 
-    @IBAction func saveButtonDidClick(sender: AnyObject) {
+    @IBAction func saveButtonDidClick(_ sender: AnyObject) {
 
     }
 
-    @IBAction func discardButtonDidClick(sender: AnyObject) {
+    @IBAction func discardButtonDidClick(_ sender: AnyObject) {
 
     }
     /*

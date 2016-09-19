@@ -12,32 +12,32 @@ import Photos
 import CoreGraphics
 
 enum CameraCaptureMode: Int {
-    case Video = 0
-    case Camera
+    case video = 0
+    case camera
 }
 
 class CameraCaptureViewModel {
-    var captureMode = CameraCaptureMode.Video
-    var currentDevicePosition = AVCaptureDevicePosition.Back
+    var captureMode = CameraCaptureMode.video
+    var currentDevicePosition = AVCaptureDevicePosition.back
     var resolutionQuality = AVCaptureSessionPresetPhoto
 
-    func getCameraDevice(deviceType: String, devicePosition: AVCaptureDevicePosition) -> AVCaptureDevice {
-        var device = AVCaptureDevice.defaultDeviceWithMediaType(deviceType)
-        let devices : NSArray = AVCaptureDevice.devicesWithMediaType(deviceType)
+    func getCameraDevice(_ deviceType: String, devicePosition: AVCaptureDevicePosition) -> AVCaptureDevice {
+        var device = AVCaptureDevice.defaultDevice(withMediaType: deviceType)
+        let devices : NSArray = AVCaptureDevice.devices(withMediaType: deviceType) as NSArray
 
         for dev in devices {
-            if dev.position == devicePosition {
-                device = dev as! AVCaptureDevice
+            if (dev as AnyObject).position == devicePosition {
+                device = dev as? AVCaptureDevice
                 break;
             }
         }
 
-        return device
+        return device!
     }
 
-    func getThePermissionForCamera(deviceType: String?, completion: ((granted: Bool) -> ())) {
-        AVCaptureDevice.requestAccessForMediaType(deviceType) { (granted) in
-            completion(granted: granted)
+    func getThePermissionForCamera(_ deviceType: String?, completion: @escaping ((_ granted: Bool) -> ())) {
+        AVCaptureDevice.requestAccess(forMediaType: deviceType) { (granted) in
+            completion(granted)
         }
     }
 }

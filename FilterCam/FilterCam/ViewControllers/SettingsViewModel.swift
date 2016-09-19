@@ -10,6 +10,6 @@ import Foundation
 
 class SettingsViewModel {
 
-    var currentSetting = CameraCaptureMode.Camera
+    var currentSetting = CameraCaptureMode.camera
     
 }

@@ -19,7 +19,7 @@ protocol PermissionService: class {
     
     var requestedPermission: Bool {get set}
     func status() -> PermissionStatus
-    func requestPermission(completion: PermissionCompletionBlock)
+    func requestPermission(_ completion: PermissionCompletionBlock)
 }
 
 typealias PermissionCompletionBlock = ((PermissionStatus) -> Void)?
@@ -119,26 +119,26 @@ class CameraPermissionService: PermissionService {
     func status() -> PermissionStatus {
         var permissionStatus: PermissionStatus = .NotDetermined
         
-        let serviceStatus = AVCaptureDevice.authorizationStatusForMediaType(AVMediaTypeVideo)
+        let serviceStatus = AVCaptureDevice.authorizationStatus(forMediaType: AVMediaTypeVideo)
         
         switch serviceStatus {
-        case .Authorized:
+        case .authorized:
             permissionStatus = .Authorized
-        case .Restricted, .Denied:
+        case .restricted, .denied:
             permissionStatus = .Unauthorized
-        case .NotDetermined:
+        case .notDetermined:
             permissionStatus = .NotDetermined
         }
         
         return permissionStatus
     }
     
-    func requestPermission(completion: PermissionCompletionBlock) {
+    func requestPermission(_ completion: PermissionCompletionBlock) {
         let permissionsStatus = status()
         
         switch permissionsStatus {
         case .NotDetermined:
-            AVCaptureDevice.requestAccessForMediaType(AVMediaTypeVideo, completionHandler: { (granted) in
+            AVCaptureDevice.requestAccess(forMediaType: AVMediaTypeVideo, completionHandler: { (granted) in
                 self.requestedPermission = true
                 let status = self.status()
                 completion?(status)
@@ -165,18 +165,18 @@ class PhotosPermissionService: PermissionService {
         let serviceStatus = PHPhotoLibrary.authorizationStatus()
         
         switch serviceStatus {
-        case .Authorized:
+        case .authorized:
             permissionStatus = .Authorized
-        case .Restricted, .Denied:
+        case .restricted, .denied:
             permissionStatus = .Unauthorized
-        case .NotDetermined:
+        case .notDetermined:
             permissionStatus = .NotDetermined
         }
         
         return permissionStatus
     }
     
-    func requestPermission(completion: PermissionCompletionBlock) {
+    func requestPermission(_ completion: PermissionCompletionBlock) {
         let permissionsStatus = status()
         
         switch permissionsStatus {
@@ -202,19 +202,19 @@ class NotificationsPermissionService: PermissionService {
     
     var requestedPermission: Bool {
         get {
-            return NSUserDefaults.standardUserDefaults().boolForKey("NotificationPermission")
+            return UserDefaults.standard.bool(forKey: "NotificationPermission")
         }
         set {
-            NSUserDefaults.standardUserDefaults().setBool(newValue, forKey: "NotificationPermission")
+            UserDefaults.standard.set(newValue, forKey: "NotificationPermission")
         }
     }
     
     func status() -> PermissionStatus {
         var permissionStatus: PermissionStatus = .NotDetermined
         
-        let settings = UIApplication.sharedApplication().currentUserNotificationSettings()
+        let settings = UIApplication.shared.currentUserNotificationSettings
         
-        if let settingTypes = settings?.types where settingTypes != .None {
+        if let settingTypes = settings?.types , settingTypes != UIUserNotificationType() {
             permissionStatus = .Authorized
         } else {
             if requestedPermission {
@@ -227,18 +227,18 @@ class NotificationsPermissionService: PermissionService {
         return permissionStatus
     }
     
-    func requestPermission(completion: PermissionCompletionBlock) {
+    func requestPermission(_ completion: PermissionCompletionBlock) {
         let permissionsStatus = status()
         
         switch permissionsStatus {
         case .NotDetermined:
             
-            let notificationTypes: UIUserNotificationType = [UIUserNotificationType.Alert, UIUserNotificationType.Badge, UIUserNotificationType.Sound]
+            let notificationTypes: UIUserNotificationType = [UIUserNotificationType.alert, UIUserNotificationType.badge, UIUserNotificationType.sound]
             
-            let pushNotificationSettings = UIUserNotificationSettings(forTypes: notificationTypes, categories: nil)
+            let pushNotificationSettings = UIUserNotificationSettings(types: notificationTypes, categories: nil)
             
-            UIApplication.sharedApplication().registerUserNotificationSettings(pushNotificationSettings)
-            UIApplication.sharedApplication().registerForRemoteNotifications()
+            UIApplication.shared.registerUserNotificationSettings(pushNotificationSettings)
+            UIApplication.shared.registerForRemoteNotifications()
             
             requestedPermission = true
             
@@ -258,17 +258,17 @@ class NotificationsPermissionService: PermissionService {
 
 extension UIAlertController {
     
-    class func disabledAlert(permissionType: PermissionType) -> UIAlertController {
-        let alertController = UIAlertController(title: "Permission Disabled", message: "Please enable access to \(permissionType.rawValue) in Settings.", preferredStyle: .Alert)
+    class func disabledAlert(_ permissionType: PermissionType) -> UIAlertController {
+        let alertController = UIAlertController(title: "Permission Disabled", message: "Please enable access to \(permissionType.rawValue) in Settings.", preferredStyle: .alert)
         
-        let okAction = UIAlertAction(title: "OK", style: .Default) { (action) -> Void in
+        let okAction = UIAlertAction(title: "OK", style: .default) { (action) -> Void in
             
         }
         alertController.addAction(okAction)
         
-        let settingsAction = UIAlertAction(title: "Settings", style: .Default) { (action) in
-            if let settingsURL = NSURL(string: UIApplicationOpenSettingsURLString) {
-                UIApplication.sharedApplication().openURL(settingsURL)
+        let settingsAction = UIAlertAction(title: "Settings", style: .default) { (action) in
+            if let settingsURL = URL(string: UIApplicationOpenSettingsURLString) {
+                UIApplication.shared.openURL(settingsURL)
             }
         }
         alertController.addAction(settingsAction)
@@ -276,17 +276,17 @@ extension UIAlertController {
         return alertController
     }
     
-    class func deniedAlert(permissionType: PermissionType) -> UIAlertController {
-        let alertController = UIAlertController(title: "\(permissionType) is currently disabled", message: "Please enable access to \(permissionType.rawValue) in Settings.", preferredStyle: .Alert)
+    class func deniedAlert(_ permissionType: PermissionType) -> UIAlertController {
+        let alertController = UIAlertController(title: "\(permissionType) is currently disabled", message: "Please enable access to \(permissionType.rawValue) in Settings.", preferredStyle: .alert)
         
-        let okAction = UIAlertAction(title: "OK", style: .Default) { (action) -> Void in
+        let okAction = UIAlertAction(title: "OK", style: .default) { (action) -> Void in
             
         }
         alertController.addAction(okAction)
         
-        let settingsAction = UIAlertAction(title: "Settings", style: .Default) { (action) in
-            if let settingsURL = NSURL(string: UIApplicationOpenSettingsURLString) {
-                UIApplication.sharedApplication().openURL(settingsURL)
+        let settingsAction = UIAlertAction(title: "Settings", style: .default) { (action) in
+            if let settingsURL = URL(string: UIApplicationOpenSettingsURLString) {
+                UIApplication.shared.openURL(settingsURL)
             }
         }
         alertController.addAction(settingsAction)

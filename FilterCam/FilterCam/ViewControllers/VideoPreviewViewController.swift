@@ -11,8 +11,8 @@ import AVFoundation
 import Photos
 
 enum VideoPreviewType {
-    case VideoPreview
-    case GalleryVideoPreview
+    case videoPreview
+    case galleryVideoPreview
 }
 
 class VideoPreviewViewController: UIViewController {
@@ -25,26 +25,26 @@ class VideoPreviewViewController: UIViewController {
     @IBOutlet weak var saveButton: UIButton!
     @IBOutlet weak var progressView: UIProgressView!
     @IBOutlet weak var endLabel: UILabel!
-    private var playingAsset: AVAsset?
-    private var currentPlayerItem: AVPlayerItem?
+    fileprivate var playingAsset: AVAsset?
+    fileprivate var currentPlayerItem: AVPlayerItem?
     
     @IBOutlet weak var discardButton: UIButton!
     @IBOutlet weak var startLabel: UILabel!
-    private var playing = false
-    private var totalDuration: Double = 0
-    private var currentDuration: Double = 0
-    private var fileNumber = 0
+    fileprivate var playing = false
+    fileprivate var totalDuration: Double = 0
+    fileprivate var currentDuration: Double = 0
+    fileprivate var fileNumber = 0
 
-    private var periodicObserver: AnyObject?
+    fileprivate var periodicObserver: AnyObject?
 
-    private lazy var videoPlayer = AVPlayer()
-    private var videoPlayerLayer: AVPlayerLayer!
+    fileprivate lazy var videoPlayer = AVPlayer()
+    fileprivate var videoPlayerLayer: AVPlayerLayer!
 
-    private lazy var viewModel = VideoPreviewViewModel()
+    fileprivate lazy var viewModel = VideoPreviewViewModel()
 
     var playingPhAsset: PHAsset?
-    var savedTempUrl: NSURL?
-    var videoPreviewType = VideoPreviewType.VideoPreview
+    var savedTempUrl: URL?
+    var videoPreviewType = VideoPreviewType.videoPreview
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -57,110 +57,110 @@ class VideoPreviewViewController: UIViewController {
         progressView.setProgress(0, animated: false)
         startLabel.text = "0"
 
-        saveButton.hidden = videoPreviewType == .GalleryVideoPreview ? false : true
-        discardButton.hidden = videoPreviewType == .GalleryVideoPreview ? false : true
+        saveButton.isHidden = videoPreviewType == .galleryVideoPreview ? false : true
+        discardButton.isHidden = videoPreviewType == .galleryVideoPreview ? false : true
     }
 
-    @IBAction func discardButtonDidClick(sender: AnyObject) {
+    @IBAction func discardButtonDidClick(_ sender: AnyObject) {
 
-        let fileManager = NSFileManager.defaultManager()
+        let fileManager = FileManager.default
         do {
             if let savedTempUrl = savedTempUrl {
-                try fileManager.removeItemAtURL(savedTempUrl)
+                try fileManager.removeItem(at: savedTempUrl)
             }
         }catch {
             print("could not delete the video.")
         }
     }
 
-    @IBAction func saveButtonDidClick(sender: AnyObject) {
+    @IBAction func saveButtonDidClick(_ sender: AnyObject) {
         saveVideoToLibrary()
     }
 
     func saveVideoToLibrary() {
 
-        let paths = NSSearchPathForDirectoriesInDomains(NSSearchPathDirectory.DocumentDirectory, NSSearchPathDomainMask.UserDomainMask, true)
+        let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
         let documentDirectory = paths.first
-        let dataPath = documentDirectory?.stringByAppendingString("FilterCam \(fileNumber).mov")
+        let dataPath = (documentDirectory)! + "FilterCam \(fileNumber).mov"
 
         fileNumber += 1
 
         guard let savedTempUrl = savedTempUrl else{
             return
         }
-        guard let exporter = AVAssetExportSession(asset: AVURLAsset(URL: savedTempUrl), presetName: AVAssetExportPresetHighestQuality) else {
+        guard let exporter = AVAssetExportSession(asset: AVURLAsset(url: savedTempUrl), presetName: AVAssetExportPresetHighestQuality) else {
             return
         }
-        exporter.outputURL = NSURL(string: dataPath!)
+        exporter.outputURL = URL(string: dataPath)
         exporter.outputFileType = AVFileTypeQuickTimeMovie
         exporter.shouldOptimizeForNetworkUse = true
 
-        exporter.exportAsynchronouslyWithCompletionHandler() {
-            dispatch_async(dispatch_get_main_queue()) { _ in
-                let alertController = UIAlertController(title: "Saved", message: "Video successfully saved", preferredStyle: .Alert)
-                self.presentViewController(alertController, animated: true, completion: nil)
+        exporter.exportAsynchronously() {
+            DispatchQueue.main.async { _ in
+                let alertController = UIAlertController(title: "Saved", message: "Video successfully saved", preferredStyle: .alert)
+                self.present(alertController, animated: true, completion: nil)
             }
         }
     }
 
-    override func viewWillAppear(animated: Bool) {
+    override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         addPlayerItemToPlayer()
 
     }
 
-    override func viewDidAppear(animated: Bool) {
+    override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
     }
 
-    private func addPlayerItemToPlayer() {
+    fileprivate func addPlayerItemToPlayer() {
 
-        videoPreviewView.layer.insertSublayer(videoPlayerLayer, atIndex: 0)
+        videoPreviewView.layer.insertSublayer(videoPlayerLayer, at: 0)
 
         if let playingPhAsset = playingPhAsset {
-            PHCachingImageManager.defaultManager().requestAVAssetForVideo(playingPhAsset, options: nil) { (asset, audio, doctionaryObject) in
+            PHCachingImageManager.default().requestAVAsset(forVideo: playingPhAsset, options: nil) { (asset, audio, doctionaryObject) in
                 Async.main{
                     self.setupThePlayerItem(asset)
                 }
             }
         } else if let savedTempUrl = savedTempUrl{
-            let asset = AVURLAsset(URL: savedTempUrl, options: nil)
+            let asset = AVURLAsset(url: savedTempUrl, options: nil)
             setupThePlayerItem(asset)
         }
     }
 
-    private func setupThePlayerItem(asset: AVAsset?) {
+    fileprivate func setupThePlayerItem(_ asset: AVAsset?) {
         self.playingAsset = asset
         self.currentPlayerItem = AVPlayerItem(asset: self.playingAsset!)
         self.totalDuration = CMTimeGetSeconds(self.playingAsset!.duration)
-        self.videoPlayer.replaceCurrentItemWithPlayerItem(self.currentPlayerItem!)
+        self.videoPlayer.replaceCurrentItem(with: self.currentPlayerItem!)
         let interval = CMTimeMakeWithSeconds(0.5, Int32(NSEC_PER_SEC))
-        self.periodicObserver = self.videoPlayer.addPeriodicTimeObserverForInterval(interval, queue: nil, usingBlock: { (time) in
+        self.periodicObserver = self.videoPlayer.addPeriodicTimeObserver(forInterval: interval, queue: nil, using: { (time) in
             self.reloadTimeAndProgress(time)
-        })
-        self.currentPlayerItem?.addObserver(self, forKeyPath: "status", options: [NSKeyValueObservingOptions.New, NSKeyValueObservingOptions.Initial], context: nil)
-        self.currentPlayerItem?.addObserver(self, forKeyPath: "rate", options: [NSKeyValueObservingOptions.New], context: nil)
-        self.currentPlayerItem?.addObserver(self, forKeyPath: "playbackBufferEmpty", options: [NSKeyValueObservingOptions.New, NSKeyValueObservingOptions.Initial], context: nil)
-        self.currentPlayerItem?.addObserver(self, forKeyPath: "playbackLikelyToKeepUp", options: [NSKeyValueObservingOptions.New, NSKeyValueObservingOptions.Initial], context: nil)
-        self.videoPlayer.actionAtItemEnd = .Pause
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(VideoPreviewViewController.handlePlayerItemOperation(_:)), name: AVPlayerItemDidPlayToEndTimeNotification, object: self.videoPlayer.currentItem)
+        }) as AnyObject?
+        self.currentPlayerItem?.addObserver(self, forKeyPath: "status", options: [NSKeyValueObservingOptions.new, NSKeyValueObservingOptions.initial], context: nil)
+        self.currentPlayerItem?.addObserver(self, forKeyPath: "rate", options: [NSKeyValueObservingOptions.new], context: nil)
+        self.currentPlayerItem?.addObserver(self, forKeyPath: "playbackBufferEmpty", options: [NSKeyValueObservingOptions.new, NSKeyValueObservingOptions.initial], context: nil)
+        self.currentPlayerItem?.addObserver(self, forKeyPath: "playbackLikelyToKeepUp", options: [NSKeyValueObservingOptions.new, NSKeyValueObservingOptions.initial], context: nil)
+        self.videoPlayer.actionAtItemEnd = .pause
+        NotificationCenter.default.addObserver(self, selector: #selector(VideoPreviewViewController.handlePlayerItemOperation(_:)), name: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: self.videoPlayer.currentItem)
     }
 
-    func handlePlayerItemOperation(notification: NSNotification) {
+    func handlePlayerItemOperation(_ notification: Notification) {
 
         let object = notification.object as? AVPlayerItem
         self.playing = false
-        object?.seekToTime(kCMTimeZero, completionHandler: { (flag) in
+        object?.seek(to: kCMTimeZero, completionHandler: { (flag) in
             Async.main{
                 self.videoPlayer.pause()
-                self.videoButton.hidden = false
+                self.videoButton.isHidden = false
             }
         })
 
         print("handlePlayerItemOperation")
     }
 
-    func reloadTimeAndProgress(time: CMTime) {
+    func reloadTimeAndProgress(_ time: CMTime) {
 
         if playing {
             let timeInSeconds = CMTimeGetSeconds(time)
@@ -173,7 +173,7 @@ class VideoPreviewViewController: UIViewController {
         }
     }
 
-    override func viewWillDisappear(animated: Bool) {
+    override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         if let periodicObserver = periodicObserver {
             videoPlayer.removeTimeObserver(periodicObserver)
@@ -182,29 +182,32 @@ class VideoPreviewViewController: UIViewController {
         currentPlayerItem?.removeObserver(self, forKeyPath: "rate")
         currentPlayerItem?.removeObserver(self, forKeyPath: "playbackBufferEmpty")
         currentPlayerItem?.removeObserver(self, forKeyPath: "playbackLikelyToKeepUp")
-        NSNotificationCenter.defaultCenter().removeObserver(self)
+        NotificationCenter.default.removeObserver(self)
     }
 
-    override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
         guard let keyPath = keyPath else{
             return
         }
         guard let currentPlayerItem = currentPlayerItem else {
             return
         }
-        switch keyPath {
-        case AVPlayerItemDidPlayToEndTimeNotification:
-            videoPlayer.pause()
-            playing = false
-        case AVPlayerItemTimeJumpedNotification:()
-        case "status":()
-        case "rate":()
-        case "playbackBufferEmpty":
-            if currentPlayerItem.playbackBufferEmpty {
+
+        if currentPlayerItem.isPlaybackBufferEmpty {
+            if currentPlayerItem.isPlaybackBufferEmpty {
                 playing = false
                 videoPlayer.pause()
             }
-        case "playbackLikelyToKeepUp":()
+        }
+
+        if currentPlayerItem.isPlaybackLikelyToKeepUp {
+
+        }
+        switch NSNotification.Name(keyPath) {
+        case NSNotification.Name.AVPlayerItemDidPlayToEndTime:
+            videoPlayer.pause()
+            playing = false
+        case NSNotification.Name.AVPlayerItemTimeJumped:()
         default: ()
         }
     }
@@ -213,30 +216,30 @@ class VideoPreviewViewController: UIViewController {
         super.didReceiveMemoryWarning()
     }
     
-    @IBAction func playButtonTapped(sender: AnyObject) {
+    @IBAction func playButtonTapped(_ sender: AnyObject) {
 
-        if !playing && videoPlayer.status == .ReadyToPlay{
+        if !playing && videoPlayer.status == .readyToPlay{
             videoPlayer.play()
-            videoButton.hidden = true
+            videoButton.isHidden = true
         } else {
             videoPlayer.pause()
-            videoButton.hidden = false
+            videoButton.isHidden = false
         }
         playing = !playing
     }
 
-    private func reloadAllSubviews() {
+    fileprivate func reloadAllSubviews() {
         videoPreviewView.layoutIfNeeded()
         videoPlayerLayer.frame = videoPreviewView.frame
     }
 
-    override func didRotateFromInterfaceOrientation(fromInterfaceOrientation: UIInterfaceOrientation) {
+    override func didRotate(from fromInterfaceOrientation: UIInterfaceOrientation) {
         self.reloadAllSubviews()
     }
 
-    override func willRotateToInterfaceOrientation(toInterfaceOrientation: UIInterfaceOrientation, duration: NSTimeInterval) {
-        UIView.animateWithDuration(duration) { 
+    override func willRotate(to toInterfaceOrientation: UIInterfaceOrientation, duration: TimeInterval) {
+        UIView.animate(withDuration: duration, animations: { 
             self.reloadAllSubviews()
-        }
+        }) 
     }
 }

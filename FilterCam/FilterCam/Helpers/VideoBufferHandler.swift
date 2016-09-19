@@ -14,10 +14,10 @@ typealias BufferCallBack = (CMSampleBuffer, CGAffineTransform) -> ()
 
 class VideoBufferHandler: NSObject, CaptureDelagateProtocol {
 
-    var currentDevicePosition = AVCaptureDevicePosition.Back
+    var currentDevicePosition = AVCaptureDevicePosition.back
     var resolutionQuality = AVCaptureSessionPresetPhoto
 
-    private lazy var cameraCaptureSession: AVCaptureSession = {
+    fileprivate lazy var cameraCaptureSession: AVCaptureSession = {
         let session = AVCaptureSession()
 
         if session.canSetSessionPreset(self.resolutionQuality) {
@@ -28,15 +28,15 @@ class VideoBufferHandler: NSObject, CaptureDelagateProtocol {
         return session
     }()
 
-    private lazy var videoCaptureOutput = AVCaptureVideoDataOutput()
-    private var inputDevice: AVCaptureDevice?
-    private var captureCameraInput: AVCaptureDeviceInput?
-    private var captureDelegate: CaptureBufferDelegate?
-    private lazy var cameraStillImageOutput = AVCaptureStillImageOutput()
+    fileprivate lazy var videoCaptureOutput = AVCaptureVideoDataOutput()
+    fileprivate var inputDevice: AVCaptureDevice?
+    fileprivate var captureCameraInput: AVCaptureDeviceInput?
+    fileprivate var captureDelegate: CaptureBufferDelegate?
+    fileprivate lazy var cameraStillImageOutput = AVCaptureStillImageOutput()
 
     var outputSettings = [AVVideoCodecKey:AVVideoCodecJPEG]
     var bufferCallBack: BufferCallBack?
-    var videoTransform = CGAffineTransformIdentity
+    var videoTransform = CGAffineTransform.identity
     var videoCreator: VideoCreator?
     var isrecordingVideo = false
     var numberOfFrames = 0
@@ -47,29 +47,32 @@ class VideoBufferHandler: NSObject, CaptureDelagateProtocol {
         setTheCameraStillImageOutputs()
     }
 
-    override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
-        if keyPath == AVCaptureSessionRuntimeErrorNotification {
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+        guard let keyPath = keyPath else {
+            return
+        }
+        if NSNotification.Name(keyPath) == NSNotification.Name.AVCaptureSessionRuntimeError {
             let cameraSession = object as? AVCaptureSession
 
             guard let captureSession = cameraSession else {
                 return
             }
 
-            if captureSession.running {
+            if captureSession.isRunning {
                 print("captureSession running")
-            } else if captureSession.interrupted {
+            } else if captureSession.isInterrupted {
                 print("captureSession interupted")
             }
         }
     }
 
-    private func addInputsToCameraSession() {
+    fileprivate func addInputsToCameraSession() {
 
-        cameraCaptureSession.addObserver(self, forKeyPath: AVCaptureSessionRuntimeErrorNotification, options: NSKeyValueObservingOptions.New, context: nil)
+        cameraCaptureSession.addObserver(self, forKeyPath: NSNotification.Name.AVCaptureSessionRuntimeError.rawValue, options: NSKeyValueObservingOptions.new, context: nil)
 
         let devices = AVCaptureDevice.devices()
 
-        for device in devices {
+        for device in devices! {
             print((device as! AVCaptureDevice).localizedName)
         }
 
@@ -83,7 +86,7 @@ class VideoBufferHandler: NSObject, CaptureDelagateProtocol {
         setTheVideoOutput()
     }
 
-    private func setTheCameraStillImageOutputs() {
+    fileprivate func setTheCameraStillImageOutputs() {
         cameraStillImageOutput.outputSettings = outputSettings
 
         if cameraCaptureSession.canAddOutput(cameraStillImageOutput) {
@@ -91,27 +94,27 @@ class VideoBufferHandler: NSObject, CaptureDelagateProtocol {
         }
     }
 
-    private func setTheVideoOutput() {
-        videoCaptureOutput.videoSettings = [(kCVPixelBufferPixelFormatTypeKey as NSString) : NSNumber(unsignedInt: kCVPixelFormatType_420YpCbCr8BiPlanarFullRange)]
+    fileprivate func setTheVideoOutput() {
+        videoCaptureOutput.videoSettings = [(kCVPixelBufferPixelFormatTypeKey as NSString) : NSNumber(value: kCVPixelFormatType_420YpCbCr8BiPlanarFullRange as UInt32)]
 
         captureDelegate = CaptureBufferDelegate(delegate: self)
 
-        videoCaptureOutput.setSampleBufferDelegate(captureDelegate, queue: dispatch_get_main_queue())
+        videoCaptureOutput.setSampleBufferDelegate(captureDelegate, queue: DispatchQueue.main)
         cameraCaptureSession.addOutput(videoCaptureOutput)
     }
 
-    private func getCameraDevice(deviceType: String, devicePosition: AVCaptureDevicePosition) -> AVCaptureDevice {
-        var device = AVCaptureDevice.defaultDeviceWithMediaType(deviceType)
-        let devices : NSArray = AVCaptureDevice.devicesWithMediaType(deviceType)
+    fileprivate func getCameraDevice(_ deviceType: String, devicePosition: AVCaptureDevicePosition) -> AVCaptureDevice {
+        var device = AVCaptureDevice.defaultDevice(withMediaType: deviceType)
+        let devices : NSArray = AVCaptureDevice.devices(withMediaType: deviceType) as NSArray
 
         for dev in devices {
-            if dev.position == devicePosition {
-                device = dev as! AVCaptureDevice
+            if (dev as AnyObject).position == devicePosition {
+                device = dev as? AVCaptureDevice
                 break;
             }
         }
 
-        return device
+        return device!
     }
 
     func startSession() {
@@ -130,7 +133,7 @@ class VideoBufferHandler: NSObject, CaptureDelagateProtocol {
     }
 
     func removeObservers() {
-        cameraCaptureSession.removeObserver(self, forKeyPath: AVCaptureSessionRuntimeErrorNotification)
+        cameraCaptureSession.removeObserver(self, forKeyPath: NSNotification.Name.AVCaptureSessionRuntimeError.rawValue)
     }
 
     func changeTheDeviceType() {
@@ -138,30 +141,30 @@ class VideoBufferHandler: NSObject, CaptureDelagateProtocol {
         cameraCaptureSession.beginConfiguration()
         cameraCaptureSession.removeInput(captureCameraInput)
         switch currentDevicePosition {
-        case .Front:
-            currentDevicePosition = .Back
+        case .front:
+            currentDevicePosition = .back
             configureMediaInput(currentDevicePosition)
-        case .Back:
-            currentDevicePosition = .Front
+        case .back:
+            currentDevicePosition = .front
             configureMediaInput(currentDevicePosition)
         default: ()
         }
         cameraCaptureSession.commitConfiguration()
     }
 
-    func captureImage(withFilter filter: Filter?, callBack: (UIImage?) -> ()) {
-        if let videoConnection = cameraStillImageOutput.connectionWithMediaType(AVMediaTypeVideo) {
-            cameraStillImageOutput.captureStillImageAsynchronouslyFromConnection(videoConnection) {
+    func captureImage(withFilter filter: Filter?, callBack: @escaping (UIImage?) -> ()) {
+        if let videoConnection = cameraStillImageOutput.connection(withMediaType: AVMediaTypeVideo) {
+            cameraStillImageOutput.captureStillImageAsynchronously(from: videoConnection) {
                 (imageDataSampleBuffer, error) -> Void in
                 let image = UIImage(data: AVCaptureStillImageOutput.jpegStillImageNSDataRepresentation(imageDataSampleBuffer))
-                let ciimage = image?.CIImage
+                let ciimage = image?.ciImage
 
                 if let ciimage = ciimage {
 
                     if let filter = filter {
 
                         let filteredImage = filter(ciimage)
-                        let uiimage = UIImage(CIImage: filteredImage)
+                        let uiimage = UIImage(ciImage: filteredImage)
                         callBack(uiimage)
 
                     } else {
@@ -174,7 +177,7 @@ class VideoBufferHandler: NSObject, CaptureDelagateProtocol {
         }
     }
 
-    private func configureMediaInput(devicePosition: AVCaptureDevicePosition) {
+    fileprivate func configureMediaInput(_ devicePosition: AVCaptureDevicePosition) {
 
         let videoDevice = getCameraDevice(AVMediaTypeVideo, devicePosition: devicePosition)
 
@@ -193,7 +196,7 @@ class VideoBufferHandler: NSObject, CaptureDelagateProtocol {
         }
     }
 
-    func didOutput(sampleBuffer: CMSampleBuffer) {
+    func didOutput(_ sampleBuffer: CMSampleBuffer) {
         numberOfFrames += 1
         if let bufferCallBack = bufferCallBack {
             bufferCallBack(sampleBuffer, videoTransform)
@@ -208,11 +211,11 @@ private class CaptureBufferDelegate: NSObject, AVCaptureVideoDataOutputSampleBuf
         self.delegate = delegate
     }
 
-    @objc func captureOutput(captureOutput: AVCaptureOutput!, didOutputSampleBuffer sampleBuffer: CMSampleBuffer!, fromConnection connection: AVCaptureConnection!) {
+    @objc func captureOutput(_ captureOutput: AVCaptureOutput!, didOutputSampleBuffer sampleBuffer: CMSampleBuffer!, from connection: AVCaptureConnection!) {
         delegate?.didOutput(sampleBuffer)
     }
 }
 
 protocol CaptureDelagateProtocol{
-    func didOutput(sampleBuffer: CMSampleBuffer)
+    func didOutput(_ sampleBuffer: CMSampleBuffer)
 }

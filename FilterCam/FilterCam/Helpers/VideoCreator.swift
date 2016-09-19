@@ -13,30 +13,30 @@ import UIKit
 import Photos
 
 enum CreationType {
-    case FromVideo
-    case FromSeparateImages
+    case fromVideo
+    case fromSeparateImages
 }
 
 class VideoCreator: NSObject {
 
-    private var assetWriter: AVAssetWriter?
-    private var assetWriterVideoInput: AVAssetWriterInput?
-    private var pixelBufferAdopter: AVAssetWriterInputPixelBufferAdaptor?
+    fileprivate var assetWriter: AVAssetWriter?
+    fileprivate var assetWriterVideoInput: AVAssetWriterInput?
+    fileprivate var pixelBufferAdopter: AVAssetWriterInputPixelBufferAdaptor?
 
-    private var writingPath: String?
-    private var videoFPS: Int32 = 25
-    private var frameDuration: CMTime!
+    fileprivate var writingPath: String?
+    fileprivate var videoFPS: Int32 = 25
+    fileprivate var frameDuration: CMTime!
 
     var pixelFormat: OSType?
     var size: CGSize?
-    var writingQueue: dispatch_queue_t?
-    var videoCreationType = CreationType.FromSeparateImages
-    private var coreImageContext: CIContext?
+    var writingQueue: DispatchQueue?
+    var videoCreationType = CreationType.fromSeparateImages
+    fileprivate var coreImageContext: CIContext?
 
-    private (set) var sessionRunning = false
-    private (set) var numberOfFrames = 0
+    fileprivate (set) var sessionRunning = false
+    fileprivate (set) var numberOfFrames = 0
 
-    func applyFilterTo(video: AVAsset, videoFPS: Int32, size: CGSize, filter: Filter, savingUrl: String, completion: (savedUrl: NSURL) -> ()) {
+    func applyFilterTo(_ video: AVAsset, videoFPS: Int32, size: CGSize, filter: @escaping Filter, savingUrl: String, completion: @escaping (_ savedUrl: URL) -> ()) {
 
         startWrting(atPath: savingUrl, size: size, videoFPS: videoFPS)
 
@@ -47,12 +47,12 @@ class VideoCreator: NSObject {
 
         for frameCount in 1...totalCount {
 
-            let time = NSNumber(int: frameCount)
+            let time = NSNumber(value: frameCount as Int32)
             times.append(time)
         }
 
         var discardedImages = 0
-        imageGenerator.generateCGImagesAsynchronouslyForTimes(times) { (time, image, secondTime, result, error) in
+        imageGenerator.generateCGImagesAsynchronously(forTimes: times) { (time, image, secondTime, result, error) in
 
             if let error = error {
                 print("Error in getting the image at time \(time)\n\n Error: \(error)")
@@ -60,26 +60,26 @@ class VideoCreator: NSObject {
             } else {
 
                 switch result {
-                case .Cancelled:
+                case .cancelled:
                     discardedImages += 1
-                case .Succeeded:
+                case .succeeded:
                     if let image = image {
-                        let ciimage = CIImage(CGImage: image)
+                        let ciimage = CIImage(cgImage: image)
                         let filteredImage = filter(ciimage)
-                        let cgimage = self.coreImageContext?.createCGImage(filteredImage, fromRect: filteredImage.extent)
+                        let cgimage = self.coreImageContext?.createCGImage(filteredImage, from: filteredImage.extent)
                         if let cgimage = cgimage {
                             self.appendImage(cgimage, completion: { (numberOfFrames) in
                             })
                         }
                     }
-                case .Failed:
+                case .failed:
                     discardedImages += 1
                 }
             }
 
             if self.numberOfFrames <= times.count && self.numberOfFrames >= times.count - discardedImages {
                 self.stopWriting({ (savedUrl) in
-                    completion(savedUrl: savedUrl)
+                    completion(savedUrl)
                 })
             }
         }
@@ -88,25 +88,25 @@ class VideoCreator: NSObject {
     func startWrting(atPath path: String, size: CGSize, videoFPS: Int32) {
         self.size = size
         writingPath = path
-        assetWriter = createAssetWriter(writingPath ?? "", size: size ?? CGSizeZero)
+        assetWriter = createAssetWriter(writingPath ?? "", size: size)
         self.videoFPS = videoFPS
         frameDuration = CMTimeMake(1, videoFPS)
 
         coreImageContext = CIContext(options: nil)
 
         let sourceBufferAttributes : [String : AnyObject] = [
-            kCVPixelBufferPixelFormatTypeKey as String : Int(pixelFormat ?? kCVPixelFormatType_32ARGB),
-            kCVPixelBufferWidthKey as String : size.width,
-            kCVPixelBufferHeightKey as String : size.height,
+            kCVPixelBufferPixelFormatTypeKey as String : Int(pixelFormat ?? kCVPixelFormatType_32ARGB) as AnyObject,
+            kCVPixelBufferWidthKey as String : size.width as AnyObject,
+            kCVPixelBufferHeightKey as String : size.height as AnyObject,
             ]
         if let assetWriterVideoInput = assetWriterVideoInput {
             pixelBufferAdopter = AVAssetWriterInputPixelBufferAdaptor(assetWriterInput: assetWriterVideoInput, sourcePixelBufferAttributes: sourceBufferAttributes)
         }
 
         assetWriter?.startWriting()
-        assetWriter?.startSessionAtSourceTime(kCMTimeZero)
+        assetWriter?.startSession(atSourceTime: kCMTimeZero)
 
-        assetWriterVideoInput?.requestMediaDataWhenReadyOnQueue(writingQueue ?? dispatch_get_main_queue(), usingBlock: {
+        assetWriterVideoInput?.requestMediaDataWhenReady(on: writingQueue ?? DispatchQueue.main, using: {
 
         })
 
@@ -115,19 +115,19 @@ class VideoCreator: NSObject {
 
     //MARK: This method to be used when there is only 'CMSampleBuffer' to append with.
     //Avoid this method as far as possible.
-    func appendSampleBuffer(sampleBuffer: CMSampleBuffer, transform: CGAffineTransform, rect: CGRect, completion: (numberOfFrames: Int) -> ()) {
-        let ciimage = CIImage(buffer: sampleBuffer).imageByApplyingTransform(transform)
+    func appendSampleBuffer(_ sampleBuffer: CMSampleBuffer, transform: CGAffineTransform, rect: CGRect, completion: @escaping (_ numberOfFrames: Int) -> ()) {
+        let ciimage = CIImage(buffer: sampleBuffer).applying(transform)
 
-        let cgimage = coreImageContext?.createCGImage(ciimage, fromRect: rect)
+        let cgimage = coreImageContext?.createCGImage(ciimage, from: rect)
 
         if let cgimage = cgimage {
             appendImage(cgimage) { (numberOfFrames) in
-                completion(numberOfFrames: numberOfFrames)
+                completion(numberOfFrames)
             }
         }
     }
 
-    func writeImagesAsMovie(allImages: [CGImage], videoPath: String, videoSize: CGSize, videoFPS: Int32) {
+    func writeImagesAsMovie(_ allImages: [CGImage], videoPath: String, videoSize: CGSize, videoFPS: Int32) {
         // Create AVAssetWriter to write video
         guard let assetWriter = createAssetWriter(videoPath, size: videoSize) else {
             print("Error converting images to video: AVAssetWriter not created")
@@ -137,18 +137,18 @@ class VideoCreator: NSObject {
         // If here, AVAssetWriter exists so create AVAssetWriterInputPixelBufferAdaptor
         let writerInput = assetWriter.inputs.filter{ $0.mediaType == AVMediaTypeVideo }.first!
         let sourceBufferAttributes : [String : AnyObject] = [
-            kCVPixelBufferPixelFormatTypeKey as String : Int(kCVPixelFormatType_32ARGB),
-            kCVPixelBufferWidthKey as String : videoSize.width,
-            kCVPixelBufferHeightKey as String : videoSize.height,
+            kCVPixelBufferPixelFormatTypeKey as String : Int(kCVPixelFormatType_32ARGB) as AnyObject,
+            kCVPixelBufferWidthKey as String : videoSize.width as AnyObject,
+            kCVPixelBufferHeightKey as String : videoSize.height as AnyObject,
             ]
         let pixelBufferAdaptor = AVAssetWriterInputPixelBufferAdaptor(assetWriterInput: writerInput, sourcePixelBufferAttributes: sourceBufferAttributes)
 
         // Start writing session
         assetWriter.startWriting()
-        assetWriter.startSessionAtSourceTime(kCMTimeZero)
+        assetWriter.startSession(atSourceTime: kCMTimeZero)
 
         switch assetWriter.status {
-        case .Writing:
+        case .writing:
             print("Asset writer is writing")
         default:
             print("Error converting images to video: assetWriter is not writing:- \(assetWriter.status)")
@@ -160,7 +160,7 @@ class VideoCreator: NSObject {
         }
 
         // -- Create queue for <requestMediaDataWhenReadyOnQueue>
-        let mediaQueue = dispatch_queue_create("mediaInputQueue", DISPATCH_QUEUE_SERIAL)
+        let mediaQueue = DispatchQueue(label: "mediaInputQueue", attributes: [])
 
         // -- Set video parameters
         let frameDuration = CMTimeMake(1, videoFPS)
@@ -168,9 +168,9 @@ class VideoCreator: NSObject {
 
         // -- Add images to video
         let numImages = allImages.count
-        writerInput.requestMediaDataWhenReadyOnQueue(mediaQueue, usingBlock: { () -> Void in
+        writerInput.requestMediaDataWhenReady(on: mediaQueue, using: { () -> Void in
             // Append unadded images to video but only while input ready
-            while (writerInput.readyForMoreMediaData && frameCount < numImages) {
+            while (writerInput.isReadyForMoreMediaData && frameCount < numImages) {
                 let lastFrameTime = CMTimeMake(Int64(frameCount), videoFPS)
                 let presentationTime = frameCount == 0 ? lastFrameTime : CMTimeAdd(lastFrameTime, frameDuration)
 
@@ -186,14 +186,14 @@ class VideoCreator: NSObject {
             if (frameCount >= numImages) {
                 self.sessionRunning = false
                 writerInput.markAsFinished()
-                assetWriter.finishWritingWithCompletionHandler {
+                assetWriter.finishWriting {
                     if (assetWriter.error != nil) {
                         print("Error converting images to video: \(assetWriter.error)")
                     } else {
-                        let paths = NSSearchPathForDirectoriesInDomains(NSSearchPathDirectory.DocumentDirectory, NSSearchPathDomainMask.UserDomainMask, true)
+                        let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
                         let documentDirectory = paths.first
-                        let dataPath = documentDirectory?.stringByAppendingString("FilterCam \(12).mov")
-                        self.saveVideoToLibrary(NSURL(fileURLWithPath: dataPath!))
+                        let dataPath = (documentDirectory)! + "FilterCam \(12).mov"
+                        self.saveVideoToLibrary(URL(fileURLWithPath: dataPath))
                         print("Converted images to movie @ \(videoPath)")
                     }
                 }
@@ -201,17 +201,17 @@ class VideoCreator: NSObject {
         })
     }
 
-    func saveVideoToLibrary(videoURL: NSURL) {
+    func saveVideoToLibrary(_ videoURL: URL) {
         PHPhotoLibrary.requestAuthorization { status in
             // Return if unauthorized
-            guard status == .Authorized else {
+            guard status == .authorized else {
                 print("Error saving video: unauthorized access")
                 return
             }
 
             // If here, save video to library
-            PHPhotoLibrary.sharedPhotoLibrary().performChanges({
-                PHAssetChangeRequest.creationRequestForAssetFromVideoAtFileURL(videoURL)
+            PHPhotoLibrary.shared().performChanges({
+                PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: videoURL)
             }) { success, error in
                 if !success {
                     print("Error saving video: \(error)")
@@ -220,12 +220,12 @@ class VideoCreator: NSObject {
         }
     }
 
-    func appendImage(image: CGImage, completion: (numberOfFrames: Int) -> ()) {
+    func appendImage(_ image: CGImage, completion: (_ numberOfFrames: Int) -> ()) {
         guard let assetWriterVideoInput = assetWriterVideoInput else {
             return
         }
 
-        if assetWriterVideoInput.readyForMoreMediaData {
+        if assetWriterVideoInput.isReadyForMoreMediaData {
             let lastFrameTime = CMTimeMake(Int64(self.numberOfFrames), self.videoFPS)
             let presentationTime = self.numberOfFrames == 0 ? lastFrameTime : CMTimeAdd(lastFrameTime, self.frameDuration)
 
@@ -234,33 +234,33 @@ class VideoCreator: NSObject {
                 return
             }
             self.numberOfFrames += 1
-            completion(numberOfFrames: self.numberOfFrames)
+            completion(self.numberOfFrames)
         }
     }
 
-    func stopWriting(completion: (savedUrl: NSURL) -> Void) {
+    func stopWriting(_ completion: @escaping (_ savedUrl: URL) -> Void) {
         assetWriterVideoInput?.markAsFinished()
-        assetWriter?.finishWritingWithCompletionHandler {
-            completion(savedUrl: NSURL(string: self.writingPath!)!)
+        assetWriter?.finishWriting {
+            completion(URL(string: self.writingPath!)!)
         }
         sessionRunning = false
     }
 
-    func createAssetWriter(path: String, size: CGSize) -> AVAssetWriter? {
-        let pathURL = NSURL(fileURLWithPath: path)
+    func createAssetWriter(_ path: String, size: CGSize) -> AVAssetWriter? {
+        let pathURL = URL(fileURLWithPath: path)
 
         do {
 
-            let newWriter = try AVAssetWriter(URL: pathURL, fileType: AVFileTypeMPEG4)
+            let newWriter = try AVAssetWriter(outputURL: pathURL, fileType: AVFileTypeMPEG4)
 
             let videoSettings: [String : AnyObject] = [
-                AVVideoCodecKey  : AVVideoCodecH264,
-                AVVideoWidthKey  : size.width,
-                AVVideoHeightKey : size.height,
+                AVVideoCodecKey  : AVVideoCodecH264 as AnyObject,
+                AVVideoWidthKey  : size.width as AnyObject,
+                AVVideoHeightKey : size.height as AnyObject,
                 ]
 
             assetWriterVideoInput = AVAssetWriterInput(mediaType: AVMediaTypeVideo, outputSettings: videoSettings)
-            newWriter.addInput(assetWriterVideoInput!)
+            newWriter.add(assetWriterVideoInput!)
 
             print("Created asset writer for \(size.width)x\(size.height) video")
             return newWriter
@@ -270,54 +270,55 @@ class VideoCreator: NSObject {
         }
     }
 
-    func appendPixelBufferForImageAtURL(image: CGImage, pixelBufferAdaptor: AVAssetWriterInputPixelBufferAdaptor, presentationTime: CMTime) -> Bool {
+    func appendPixelBufferForImageAtURL(_ image: CGImage, pixelBufferAdaptor: AVAssetWriterInputPixelBufferAdaptor, presentationTime: CMTime) -> Bool {
         var appendSucceeded = false
 
         autoreleasepool {
             if let pixelBufferPool = pixelBufferAdaptor.pixelBufferPool {
-                let pixelBufferPointer = UnsafeMutablePointer<CVPixelBuffer?>.alloc(1)
+                let pixelBufferPointer = UnsafeMutablePointer<CVPixelBuffer?>.allocate(capacity: 1)
                 let status: CVReturn = CVPixelBufferPoolCreatePixelBuffer(
                     kCFAllocatorDefault,
                     pixelBufferPool,
                     pixelBufferPointer
                 )
 
-                if let pixelBuffer = pixelBufferPointer.memory where status == 0 {
-//                    fillPixelBufferFromImage(image, pixelBuffer: pixelBuffer)
-                    appendSucceeded = pixelBufferAdaptor.appendPixelBuffer(pixelBuffer, withPresentationTime: presentationTime)
-                    pixelBufferPointer.destroy()
+                if let pixelBuffer = pixelBufferPointer.pointee , status == 0 {
+                    fillPixelBufferFromImage(image, pixelBuffer: pixelBuffer)
+                    appendSucceeded = pixelBufferAdaptor.append(pixelBuffer, withPresentationTime: presentationTime)
+                    pixelBufferPointer.deinitialize()
                 } else {
                     print("Error: Failed to allocate pixel buffer from pool")
                 }
 
-                pixelBufferPointer.dealloc(1)
+                pixelBufferPointer.deallocate(capacity: 1)
             }
         }
 
         return appendSucceeded
     }
 
-    func fillPixelBufferFromImage(image: CGImage, pixelBuffer: CVPixelBufferRef) {
-        CVPixelBufferLockBaseAddress(pixelBuffer, 0)
+    func fillPixelBufferFromImage(_ image: CGImage, pixelBuffer: CVPixelBuffer) {
+
+        CVPixelBufferLockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: CVOptionFlags(0)))
 
         let pixelData = CVPixelBufferGetBaseAddress(pixelBuffer)
         let rgbColorSpace = CGColorSpaceCreateDeviceRGB()
         
-        let height = CGImageGetHeight(image)
-        let width = CGImageGetWidth(image)
+        let height = image.height
+        let width = image.width
 
-        let context = CGBitmapContextCreate(
-            pixelData,
-            Int(width),
-            Int(height),
-            8,
-            width * 8,
-            rgbColorSpace,
-            CGImageAlphaInfo.PremultipliedFirst.rawValue
+        let context = CGContext(
+            data: pixelData,
+            width: Int(width),
+            height: Int(height),
+            bitsPerComponent: 8,
+            bytesPerRow: width * 8,
+            space: rgbColorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue
         )
 
-        CGContextDrawImage(context, CGRectMake(0, 0, CGFloat(width), CGFloat(height)), image)
+        context?.draw(image, in: CGRect(x: 0, y: 0, width: CGFloat(width), height: CGFloat(height)))
         
-        CVPixelBufferUnlockBaseAddress(pixelBuffer, 0)
+        CVPixelBufferUnlockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: CVOptionFlags(0)))
     }
 }

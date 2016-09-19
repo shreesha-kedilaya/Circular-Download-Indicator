@@ -388,7 +388,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_IDENTITY = "iPhone Distribution: Dealclan LLC";
+				CODE_SIGN_IDENTITY = "iPhone Developer: Jnanesh Nayak (QQ4E7JP8E3)";
 				INFOPLIST_FILE = FilterCam/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.1;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
@@ -403,7 +403,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_IDENTITY = "iPhone Distribution: Dealclan LLC";
+				CODE_SIGN_IDENTITY = "iPhone Developer: Jnanesh Nayak (QQ4E7JP8E3)";
 				INFOPLIST_FILE = FilterCam/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.1;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";

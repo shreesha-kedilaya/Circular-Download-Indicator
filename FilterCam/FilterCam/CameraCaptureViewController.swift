@@ -17,22 +17,22 @@ class CameraCaptureViewController: UIViewController {
 
     @IBOutlet weak var previewImageView: UIImageView!
     @IBOutlet weak var filterButton: UIButton!
-    private var movieFileOutput: AVCaptureMovieFileOutput?
+    fileprivate var movieFileOutput: AVCaptureMovieFileOutput?
 
-    private var coreImageView: CoreImageView?
+    fileprivate var coreImageView: CoreImageView?
 
-    private var fileNumber = 0
+    fileprivate var fileNumber = 0
 
     @IBOutlet weak var previewLayerFrameView: UIView!
     @IBOutlet weak var flipButton: UIButton!
     @IBOutlet weak var captureButton: UIButton!
 
-    private var cgimages = [CGImage]()
+    fileprivate var cgimages = [CGImage]()
 
-    private var videoFilterHandler: VideoBufferHandler?
-    private lazy var viewModel = CameraCaptureViewModel()
+    fileprivate var videoFilterHandler: VideoBufferHandler?
+    fileprivate lazy var viewModel = CameraCaptureViewModel()
 
-    private var isrecordingVideo = false
+    fileprivate var isrecordingVideo = false
 
     var videoCreator: VideoCreator?
 
@@ -40,9 +40,9 @@ class CameraCaptureViewController: UIViewController {
         super.viewDidLoad()
 
         previewLayerFrameView.layoutIfNeeded()
-        previewImageView.hidden = true
+        previewImageView.isHidden = true
         coreImageView = CoreImageView(frame: view.frame)
-        view.insertSubview(coreImageView!, atIndex: 0)
+        view.insertSubview(coreImageView!, at: 0)
 
         videoFilterHandler = VideoBufferHandler()
 
@@ -63,18 +63,18 @@ class CameraCaptureViewController: UIViewController {
         isrecordingVideo = true
     }
 
-    func stopVideoRecording(handler: (savedUrl: NSURL) -> ()) {
+    func stopVideoRecording(_ handler: (_ savedUrl: URL) -> ()) {
 
         isrecordingVideo = false
         guard let videoCreator = videoCreator else {
             return
         }
 
-        let paths = NSSearchPathForDirectoriesInDomains(NSSearchPathDirectory.DocumentDirectory, NSSearchPathDomainMask.UserDomainMask, true)
+        let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
         let documentDirectory = paths.first
-        let dataPath = documentDirectory?.stringByAppendingString("FilterCam \(12).mov")
+        let dataPath = (documentDirectory)! + "FilterCam \(12).mov"
 
-        videoCreator.writeImagesAsMovie(cgimages, videoPath: dataPath!, videoSize: UIScreen.mainScreen().bounds.size, videoFPS: 40)
+        videoCreator.writeImagesAsMovie(cgimages, videoPath: dataPath, videoSize: UIScreen.main.bounds.size, videoFPS: 40)
 //        if videoCreator.sessionRunning {
 //            videoCreator.stopWriting { (url: NSURL) -> Void in
 //                handler(savedUrl: url)
@@ -84,70 +84,70 @@ class CameraCaptureViewController: UIViewController {
         cgimages = []
     }
 
-    override func viewDidAppear(animated: Bool) {
+    override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
         coreImageView?.frame = view.frame
 
         if let coreImageView = coreImageView {
-            view.sendSubviewToBack(coreImageView)
+            view.sendSubview(toBack: coreImageView)
         }
 
-        captureButton.setTitle((viewModel.captureMode == .Camera ? "Capture": "Start recording"), forState: .Normal)
+        captureButton.setTitle((viewModel.captureMode == .camera ? "Capture": "Start recording"), for: UIControlState())
     }
 
-    override func viewWillAppear(animated: Bool) {
+    override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         videoFilterHandler?.startSession()
     }
 
-    override func viewWillDisappear(animated: Bool) {
+    override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        NSNotificationCenter.defaultCenter().removeObserver(self)
+        NotificationCenter.default.removeObserver(self)
         videoFilterHandler?.stopSession()
     }
 
-    @IBAction func flipImageDidTap(sender: AnyObject) {
+    @IBAction func flipImageDidTap(_ sender: AnyObject) {
         //TODO: Change the front and back camera
     }
 
-    @IBAction func didTapOnFilter(sender: AnyObject) {
+    @IBAction func didTapOnFilter(_ sender: AnyObject) {
         
     }
 
-    @IBAction func settingsDIdTap(sender: AnyObject) {
-        let settingsVC = storyboard?.instantiateViewControllerWithIdentifier("SettingsViewController") as? SettingsViewController
+    @IBAction func settingsDIdTap(_ sender: AnyObject) {
+        let settingsVC = storyboard?.instantiateViewController(withIdentifier: "SettingsViewController") as? SettingsViewController
         settingsVC?.viewModel.currentSetting = viewModel.captureMode
         settingsVC?.delegate = self
-        presentViewController(settingsVC!, animated: true, completion: nil)
+        present(settingsVC!, animated: true, completion: nil)
     }
 
-    override func didRotateFromInterfaceOrientation(fromInterfaceOrientation: UIInterfaceOrientation) {
+    override func didRotate(from fromInterfaceOrientation: UIInterfaceOrientation) {
         coreImageView?.frame = view.frame
     }
 
-    override func willRotateToInterfaceOrientation(toInterfaceOrientation: UIInterfaceOrientation, duration: NSTimeInterval) {
+    override func willRotate(to toInterfaceOrientation: UIInterfaceOrientation, duration: TimeInterval) {
         coreImageView?.frame = view.frame
     }
 
-    @IBAction func captureTheSession(sender: AnyObject) {
+    @IBAction func captureTheSession(_ sender: AnyObject) {
         handelCaptureAction()
     }
 
-    private func handelCaptureAction() {
+    fileprivate func handelCaptureAction() {
 
         switch viewModel.captureMode {
-        case .Camera:()
+        case .camera:()
 
-        case .Video:
+        case .video:
             if let videoCreator = videoCreator {
                 if !videoCreator.sessionRunning {
-                    captureButton.setTitle("Recording....", forState: .Normal)
+                    captureButton.setTitle("Recording....", for: UIControlState())
                 } else {
-                    captureButton.setTitle("Start recording", forState: .Normal)
+                    captureButton.setTitle("Start recording", for: UIControlState())
                 }
             } else {
-                captureButton.setTitle("Recording....", forState: .Normal)
+                captureButton.setTitle("Recording....", for: UIControlState())
             }
             processVideo()
         }
@@ -155,43 +155,43 @@ class CameraCaptureViewController: UIViewController {
 
     func processVideo() {
 
-        let outputFilePath = NSURL(fileURLWithPath: NSTemporaryDirectory()).URLByAppendingPathComponent("FilterCam" + String(fileNumber) + ".mov")
+        let outputFilePath = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("FilterCam" + String(fileNumber) + ".mov")
 
         fileNumber = fileNumber + 1
 
-        if let videoCreator = videoCreator {
+        if let _ = videoCreator {
             if isrecordingVideo{
                 self.stopVideoRecording({ (savedUrl) in
 //                    self.handleAfterRecordingVideo(savedUrl)
                 })
             } else {
-                self.startVideoRecording(withPath: outputFilePath.path!)
+                self.startVideoRecording(withPath: outputFilePath.path)
             }
         } else {
-            self.startVideoRecording(withPath: outputFilePath.path!)
+            self.startVideoRecording(withPath: outputFilePath.path)
         }
     }
 
-    func handleAfterRecordingVideo(saveUrl: NSURL) {
+    func handleAfterRecordingVideo(_ saveUrl: URL) {
 
         Async.main {
-            let videoPreviewViewController = self.storyboard?.instantiateViewControllerWithIdentifier("VideoPreviewViewController") as! VideoPreviewViewController
-            videoPreviewViewController.videoPreviewType = .VideoPreview
+            let videoPreviewViewController = self.storyboard?.instantiateViewController(withIdentifier: "VideoPreviewViewController") as! VideoPreviewViewController
+            videoPreviewViewController.videoPreviewType = .videoPreview
             videoPreviewViewController.savedTempUrl = saveUrl
             self.navigationController?.pushViewController(videoPreviewViewController, animated: true)
         }
     }
 
-    private func reloadAllTheInputs() {
+    fileprivate func reloadAllTheInputs() {
 
     }
 
-    private func handleTheOutputBuffer(sampleBuffer: CMSampleBuffer, transform: CGAffineTransform) {
-        let ciimage = CIImage(buffer: sampleBuffer).imageByApplyingTransform(AVCaptureDevicePosition.Front.transform)
+    fileprivate func handleTheOutputBuffer(_ sampleBuffer: CMSampleBuffer, transform: CGAffineTransform) {
+        let ciimage = CIImage(buffer: sampleBuffer).applying(AVCaptureDevicePosition.front.transform)
         let filter = pixellate(5)
         let image = filter(ciimage)
         coreImageView?.image = image
-        let cgimage = coreImageView?.coreImageContext.createCGImage(image, fromRect: UIScreen.mainScreen().bounds)
+        let cgimage = coreImageView?.coreImageContext.createCGImage(image, from: UIScreen.main.bounds)
 
         if let cgimage = cgimage {
 //            videoCreator?.appendImage(cgimage, completion: { (numberOfFrames) in
@@ -204,19 +204,19 @@ class CameraCaptureViewController: UIViewController {
     }
 
 
-    private func askSaveOrPreview() {
-        let alertController = UIAlertController(title: "Video", message: "Video is Recorded", preferredStyle: .ActionSheet)
+    fileprivate func askSaveOrPreview() {
+        let alertController = UIAlertController(title: "Video", message: "Video is Recorded", preferredStyle: .actionSheet)
 
-        let saveAction = UIAlertAction(title: "Save", style: .Default) { (action) in
-
-        }
-
-        let discardAction = UIAlertAction(title: "Discard", style: .Default) { (action) in
+        let saveAction = UIAlertAction(title: "Save", style: .default) { (action) in
 
         }
 
-        let previewAction = UIAlertAction(title: "Preview", style: .Default) { (action) in
-            let previewVC = self.storyboard?.instantiateViewControllerWithIdentifier("PreviewVideoViewController") as? PreviewVideoViewController
+        let discardAction = UIAlertAction(title: "Discard", style: .default) { (action) in
+
+        }
+
+        let previewAction = UIAlertAction(title: "Preview", style: .default) { (action) in
+            let previewVC = self.storyboard?.instantiateViewController(withIdentifier: "PreviewVideoViewController") as? PreviewVideoViewController
 
             self.navigationController?.pushViewController(previewVC!, animated: true)
         }
@@ -225,13 +225,13 @@ class CameraCaptureViewController: UIViewController {
         alertController.addAction(discardAction)
         alertController.addAction(saveAction)
 
-        presentViewController(alertController, animated: true, completion: nil)
+        present(alertController, animated: true, completion: nil)
     }
 }
 
 extension CameraCaptureViewController: SettingsViewControllerDelegate {
-    func settingsViewController(viewController: SettingsViewController, didDismissWithCaptureMode captureMode: CameraCaptureMode) {
-        viewController.dismissViewControllerAnimated(true) { 
+    func settingsViewController(_ viewController: SettingsViewController, didDismissWithCaptureMode captureMode: CameraCaptureMode) {
+        viewController.dismiss(animated: true) { 
 
             self.viewModel.captureMode = captureMode
             self.reloadAllTheInputs()
@@ -242,27 +242,27 @@ extension CameraCaptureViewController: SettingsViewControllerDelegate {
 extension CGAffineTransform {
 
     init(rotatingWithAngle angle: CGFloat) {
-        let t = CGAffineTransformMakeRotation(angle)
+        let t = CGAffineTransform(rotationAngle: angle)
         self.init(a: t.a, b: t.b, c: t.c, d: t.d, tx: t.tx, ty: t.ty)
 
     }
     init(scaleX sx: CGFloat, scaleY sy: CGFloat) {
-        let t = CGAffineTransformMakeScale(sx, sy)
+        let t = CGAffineTransform(scaleX: sx, y: sy)
         self.init(a: t.a, b: t.b, c: t.c, d: t.d, tx: t.tx, ty: t.ty)
 
     }
 
-    func scale(sx: CGFloat, sy: CGFloat) -> CGAffineTransform {
-        return CGAffineTransformScale(self, sx, sy)
+    func scale(_ sx: CGFloat, sy: CGFloat) -> CGAffineTransform {
+        return self.scaledBy(x: sx, y: sy)
     }
-    func rotate(angle: CGFloat) -> CGAffineTransform {
-        return CGAffineTransformRotate(self, angle)
+    func rotate(_ angle: CGFloat) -> CGAffineTransform {
+        return self.rotated(by: angle)
     }
 }
 
 extension CIImage {
     convenience init(buffer: CMSampleBuffer) {
-        self.init(CVPixelBuffer: CMSampleBufferGetImageBuffer(buffer)!)
+        self.init(cvPixelBuffer: CMSampleBufferGetImageBuffer(buffer)!)
     }
 }
 
@@ -275,19 +275,19 @@ extension CGRect {
 extension AVCaptureDevicePosition {
     var transform: CGAffineTransform {
         switch self {
-        case .Front:
+        case .front:
             return CGAffineTransform(rotatingWithAngle: -CGFloat(M_PI_2)).scale(1, sy: -1)
-        case .Back:
+        case .back:
             return CGAffineTransform(rotatingWithAngle: -CGFloat(M_PI_2))
         default:
-            return CGAffineTransformIdentity
+            return CGAffineTransform.identity
 
         }
     }
 
     var device: AVCaptureDevice? {
-        return AVCaptureDevice.devicesWithMediaType(AVMediaTypeVideo).filter {
-            $0.position == self
+        return AVCaptureDevice.devices(withMediaType: AVMediaTypeVideo).filter {
+            ($0 as AnyObject).position == self
             }.first as? AVCaptureDevice
     }
 }

@@ -10,48 +10,48 @@ import Foundation
 import Photos
 import AVFoundation
 
-typealias libraryInfoTupple = (PHAsset, NSURL)
+typealias libraryInfoTupple = (PHAsset, URL)
 
 class GaleryCollectionViewModel {
 
     var libraryAssets = [PHAsset]()
-    var libraryUrls = [NSURL]()
+    var libraryUrls = [URL]()
 
     var libraryInfo = [libraryInfoTupple]()
 
 
     let imageCachingManager = PHCachingImageManager()
 
-    private func getURLofMedia(mPhasset: PHAsset, completionHandler : ((responseURL : NSURL?) -> Void)){
+    fileprivate func getURLofMedia(_ mPhasset: PHAsset, completionHandler : @escaping ((_ responseURL : URL?) -> Void)){
 
-        if mPhasset.mediaType == .Image {
+        if mPhasset.mediaType == .image {
             let options: PHContentEditingInputRequestOptions = PHContentEditingInputRequestOptions()
 
             options.canHandleAdjustmentData = {(adjustmeta: PHAdjustmentData) -> Bool in
                 return true
             }
-            mPhasset.requestContentEditingInputWithOptions(options, completionHandler: {(contentEditingInput: PHContentEditingInput?, info: [NSObject : AnyObject]) -> Void in
-                completionHandler(responseURL : contentEditingInput!.fullSizeImageURL)
+            mPhasset.requestContentEditingInput(with: options, completionHandler: {(contentEditingInput: PHContentEditingInput?, info: [AnyHashable: Any]) -> Void in
+                completionHandler(contentEditingInput!.fullSizeImageURL)
             })
-        } else if mPhasset.mediaType == .Video {
+        } else if mPhasset.mediaType == .video {
             let options: PHVideoRequestOptions = PHVideoRequestOptions()
-            options.version = .Original
-            options.deliveryMode = .FastFormat
-            PHImageManager.defaultManager().requestAVAssetForVideo(mPhasset, options: options, resultHandler: {(asset: AVAsset?, audioMix: AVAudioMix?, info: [NSObject : AnyObject]?) -> Void in
+            options.version = .original
+            options.deliveryMode = .fastFormat
+            PHImageManager.default().requestAVAsset(forVideo: mPhasset, options: options, resultHandler: {(asset: AVAsset?, audioMix: AVAudioMix?, info: [AnyHashable: Any]?) -> Void in
 
                 if let urlAsset = asset as? AVURLAsset {
-                    let localVideoUrl : NSURL = urlAsset.URL
-                    completionHandler(responseURL : localVideoUrl)
+                    let localVideoUrl : URL = urlAsset.url
+                    completionHandler(localVideoUrl)
                 } else {
-                    completionHandler(responseURL : nil)
+                    completionHandler(nil)
                 }
             })
         }
     }
 
-    private func storeAllUrls(completion: () -> ())  {
+    fileprivate func storeAllUrls(_ completion: @escaping () -> ())  {
         libraryUrls.removeAll()
-        for asset in libraryAssets.enumerate() {
+        for asset in libraryAssets.enumerated() {
             getURLofMedia(asset.element, completionHandler: { (responseURL) in
                 
                 if let responseURL = responseURL {
@@ -67,14 +67,14 @@ class GaleryCollectionViewModel {
         }
     }
 
-    func fetchLibraryAssets(completion: () -> ()) {
+    func fetchLibraryAssets(_ completion: @escaping () -> ()) {
         fetchAlllibraryAssets {
 
             let cacheoptions = PHImageRequestOptions()
-            cacheoptions.synchronous = true
-            cacheoptions.version = .Original
-            cacheoptions.resizeMode = .Exact
-            self.imageCachingManager.startCachingImagesForAssets(self.libraryAssets, targetSize: CGSize(width:UIScreen.mainScreen().bounds.size.width * UIScreen.mainScreen().scale,height:UIScreen.mainScreen().bounds.size.height * UIScreen.mainScreen().scale), contentMode: .AspectFit, options: cacheoptions)
+            cacheoptions.isSynchronous = true
+            cacheoptions.version = .original
+            cacheoptions.resizeMode = .exact
+            self.imageCachingManager.startCachingImages(for: self.libraryAssets, targetSize: CGSize(width:UIScreen.main.bounds.size.width * UIScreen.main.scale,height:UIScreen.main.bounds.size.height * UIScreen.main.scale), contentMode: .aspectFit, options: cacheoptions)
 
             self.storeAllUrls{
                 completion()
@@ -82,21 +82,28 @@ class GaleryCollectionViewModel {
         }
     }
 
-    private func fetchAlllibraryAssets(completion: ()->()){
+    fileprivate func fetchAlllibraryAssets(_ completion: @escaping ()->()){
 
         self.imageCachingManager.stopCachingImagesForAllAssets()
         libraryAssets.removeAll()
         let options = PHFetchOptions()
         options.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: true)]
 
-        let results = PHAsset.fetchAssetsWithMediaType(.Video, options: options)
-        results.enumerateObjectsUsingBlock { (object, index, _) in
+        let results = PHAsset.fetchAssets(with: .video, options: options)
+        /*results.enumerateObjects { (object, index, _) in
             if let asset = object as? PHAsset {
                 self.libraryAssets.append(asset)
             }
             if self.libraryAssets.count == results.count {
                 completion()
             }
-        }
+        }*/
+
+        results.enumerateObjects ({ (object, index, _) in
+            self.libraryAssets.append(object)
+            if self.libraryAssets.count == results.count {
+                completion()
+            }
+        })
     }
 }

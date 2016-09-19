@@ -15,9 +15,9 @@ private let reuseIdentifier = "GaleryCollectionViewCell"
 class GaleryCollectionViewController: UIViewController, UICollectionViewDelegateFlowLayout, UICollectionViewDataSource {
 
     @IBOutlet weak var videoCollectionView: UICollectionView!
-    private lazy var viewModel = GaleryCollectionViewModel()
+    fileprivate lazy var viewModel = GaleryCollectionViewModel()
 
-    private var permissionService: PermissionService?
+    fileprivate var permissionService: PermissionService?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -39,37 +39,37 @@ class GaleryCollectionViewController: UIViewController, UICollectionViewDelegate
         })
     }
 
-    override func viewWillAppear(animated: Bool) {
+    override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
     }
 
-    func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int {
+    func numberOfSections(in collectionView: UICollectionView) -> Int {
         return 1
     }
 
-    func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return viewModel.libraryInfo.count
     }
 
-    func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCellWithReuseIdentifier(reuseIdentifier, forIndexPath: indexPath) as! GaleryCollectionViewCell
-        cell.videoURL = viewModel.libraryInfo[indexPath.item].1
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! GaleryCollectionViewCell
+        cell.videoURL = viewModel.libraryInfo[(indexPath as NSIndexPath).item].1
         cell.applyThumbnailImage()
         return cell
     }
 
     // MARK: UICollectionViewDelegate
 
-    func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAtIndexPath indexPath: NSIndexPath) -> CGSize {
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         return CGSize(width: 150, height: 150)
     }
-    func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAtIndex section: Int) -> CGFloat {
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
         return 25
     }
 
-    func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
-        let previewVC = storyboard?.instantiateViewControllerWithIdentifier("VideoPreviewViewController") as! VideoPreviewViewController
-        previewVC.playingPhAsset = viewModel.libraryInfo[indexPath.item].0
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let previewVC = storyboard?.instantiateViewController(withIdentifier: "VideoPreviewViewController") as! VideoPreviewViewController
+        previewVC.playingPhAsset = viewModel.libraryInfo[(indexPath as NSIndexPath).item].0
         navigationController?.pushViewController(previewVC, animated: true)
     }
 }

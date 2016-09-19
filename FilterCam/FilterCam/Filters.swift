@@ -11,24 +11,24 @@ import CoreImage
 
 typealias Filter = (CIImage) -> CIImage
 
-func hueAdjust(angleInRadians: Float) -> Filter {
+func hueAdjust(_ angleInRadians: Float) -> Filter {
     return { image in
         let parameters = [
             kCIInputAngleKey: angleInRadians,
             kCIInputImageKey: image
-        ]
+        ] as [String : Any]
         let filter = CIFilter(name: "CIHueAdjust",
                               withInputParameters: parameters)
         return filter!.outputImage!
     }
 }
 
-func pixellate(scale: Float) -> Filter {
+func pixellate(_ scale: Float) -> Filter {
     return { image in
         let parameters = [
             kCIInputImageKey:image,
             kCIInputScaleKey:scale
-        ]
+        ] as [String : Any]
         return CIFilter(name: "CIPixellate", withInputParameters: parameters)!.outputImage!
     }
 }

@@ -9,7 +9,7 @@
 import UIKit
 
 protocol SettingsViewControllerDelegate: class {
-    func settingsViewController(viewController: SettingsViewController, didDismissWithCaptureMode captureMode: CameraCaptureMode)
+    func settingsViewController(_ viewController: SettingsViewController, didDismissWithCaptureMode captureMode: CameraCaptureMode)
 }
 
 class SettingsViewController: UIViewController {
@@ -19,7 +19,7 @@ class SettingsViewController: UIViewController {
     var viewModel = SettingsViewModel()
     weak var delegate: SettingsViewControllerDelegate?
 
-    private let settingsText = ["Photo", "Video"]
+    fileprivate let settingsText = ["Photo", "Video"]
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -32,29 +32,29 @@ class SettingsViewController: UIViewController {
     }
     @IBOutlet weak var dismissButton: UIButton!
     
-    @IBAction func dismissButtonClicked(sender: AnyObject) {
-        dismissViewControllerAnimated(true, completion: nil)
+    @IBAction func dismissButtonClicked(_ sender: AnyObject) {
+        dismiss(animated: true, completion: nil)
     }
 }
 
 extension SettingsViewController: UITableViewDelegate, UITableViewDataSource {
-    func numberOfSectionsInTableView(tableView: UITableView) -> Int {
+    func numberOfSections(in tableView: UITableView) -> Int {
         return 1
     }
 
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return settingsText.count
     }
 
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCellWithIdentifier("SettingsTableViewCell") as? SettingsTableViewCell
-        cell?.settingsLabel.text = settingsText[indexPath.row]
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "SettingsTableViewCell") as? SettingsTableViewCell
+        cell?.settingsLabel.text = settingsText[(indexPath as NSIndexPath).row]
         return cell!
     }
 
-    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
 
-        let setting = CameraCaptureMode(rawValue: indexPath.row)
+        let setting = CameraCaptureMode(rawValue: (indexPath as NSIndexPath).row)
         viewModel.currentSetting = setting!
 
         delegate?.settingsViewController(self, didDismissWithCaptureMode: viewModel.currentSetting)
