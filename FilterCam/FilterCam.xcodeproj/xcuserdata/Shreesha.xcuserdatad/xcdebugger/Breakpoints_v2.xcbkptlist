@@ -13,5 +13,117 @@
             stopOnStyle = "0">
          </BreakpointContent>
       </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "FilterCam/Helpers/VideoCreator.swift"
+            timestampString = "495988542.149622"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "276"
+            endingLineNumber = "276"
+            landmarkName = "fillPixelBufferFromImage(_:pixelBuffer:inrect:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "FilterCam/Helpers/VideoCreator.swift"
+            timestampString = "495979500.872998"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "215"
+            endingLineNumber = "215"
+            landmarkName = "appendPixelBufferForImageAtURL(_:pixelBufferAdaptor:presentationTime:inrect:)"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "FilterCam.VideoCreator.appendPixelBufferForImageAtURL (__ObjC.CGImage, pixelBufferAdaptor : __ObjC.AVAssetWriterInputPixelBufferAdaptor, presentationTime : __C.CMTime, inrect : __C.CGRect) -&gt; Swift.Bool"
+                  moduleName = "FilterCam"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Shreesha/My%20space/Circle%20Progress/FilterCam/FilterCam/Helpers/VideoCreator.swift"
+                  timestampString = "495989629.47659"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "215"
+                  endingLineNumber = "215"
+                  offsetFromSymbolStart = "100">
+               </Location>
+               <Location
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "FilterCam.VideoCreator.(appendPixelBufferForImageAtURL (__ObjC.CGImage, pixelBufferAdaptor : __ObjC.AVAssetWriterInputPixelBufferAdaptor, presentationTime : __C.CMTime, inrect : __C.CGRect) -&gt; Swift.Bool).(closure #1)"
+                  moduleName = "FilterCam"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Shreesha/My%20space/Circle%20Progress/FilterCam/FilterCam/Helpers/VideoCreator.swift"
+                  timestampString = "495989629.478414"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "216"
+                  endingLineNumber = "216"
+                  offsetFromSymbolStart = "68">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "FilterCam/Helpers/VideoCreator.swift"
+            timestampString = "495988542.149622"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "226"
+            endingLineNumber = "226"
+            landmarkName = "appendPixelBufferForImageAtURL(_:pixelBufferAdaptor:presentationTime:inrect:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "FilterCam/Helpers/VideoCreator.swift"
+            timestampString = "495988542.149622"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "278"
+            endingLineNumber = "278"
+            landmarkName = "fillPixelBufferFromImage(_:pixelBuffer:inrect:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "FilterCam/Helpers/VideoCreator.swift"
+            timestampString = "495989452.10215"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "240"
+            endingLineNumber = "240"
+            landmarkName = "appendPixelBufferForImageAtURL(_:pixelBufferAdaptor:presentationTime:inrect:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
    </Breakpoints>
 </Bucket>

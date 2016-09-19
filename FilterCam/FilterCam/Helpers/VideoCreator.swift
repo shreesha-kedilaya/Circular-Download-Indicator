@@ -36,7 +36,7 @@ class VideoCreator: NSObject {
     fileprivate (set) var sessionRunning = false
     fileprivate (set) var numberOfFrames = 0
 
-    func applyFilterTo(_ video: AVAsset, videoFPS: Int32, size: CGSize, filter: @escaping Filter, savingUrl: String, completion: @escaping (_ savedUrl: URL) -> ()) {
+    func applyFilterTo(_ video: AVAsset, inrect rect: CGRect,videoFPS: Int32, size: CGSize, filter: @escaping Filter, savingUrl: String, completion: @escaping (_ savedUrl: URL) -> ()) {
 
         startWrting(atPath: savingUrl, size: size, videoFPS: videoFPS)
 
@@ -68,7 +68,7 @@ class VideoCreator: NSObject {
                         let filteredImage = filter(ciimage)
                         let cgimage = self.coreImageContext?.createCGImage(filteredImage, from: filteredImage.extent)
                         if let cgimage = cgimage {
-                            self.appendImage(cgimage, completion: { (numberOfFrames) in
+                            self.appendImage(cgimage, inrect: rect, completion: { (numberOfFrames) in
                             })
                         }
                     }
@@ -103,12 +103,15 @@ class VideoCreator: NSObject {
             pixelBufferAdopter = AVAssetWriterInputPixelBufferAdaptor(assetWriterInput: assetWriterVideoInput, sourcePixelBufferAttributes: sourceBufferAttributes)
         }
 
-        assetWriter?.startWriting()
+        let success = assetWriter?.startWriting()
+
         assetWriter?.startSession(atSourceTime: kCMTimeZero)
 
-        assetWriterVideoInput?.requestMediaDataWhenReady(on: writingQueue ?? DispatchQueue.main, using: {
+        if let success = success, !success {
+            assetWriter?.cancelWriting()
+        }
 
-        })
+        debugPrint("started to write to path \(path)")
 
         sessionRunning = true
     }
@@ -121,11 +124,161 @@ class VideoCreator: NSObject {
         let cgimage = coreImageContext?.createCGImage(ciimage, from: rect)
 
         if let cgimage = cgimage {
-            appendImage(cgimage) { (numberOfFrames) in
+            /*appendImage(cgimage) { (numberOfFrames) in
                 completion(numberOfFrames)
+            }*/
+        }
+    }
+
+
+    func saveVideoToLibrary(_ videoURL: URL) {
+        PHPhotoLibrary.requestAuthorization { status in
+            // Return if unauthorized
+            guard status == .authorized else {
+                print("Error saving video: unauthorized access")
+                return
+            }
+
+            // If here, save video to library
+            PHPhotoLibrary.shared().performChanges({
+                PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: videoURL)
+            }) { success, error in
+                if !success {
+                    print("Error saving video: \(error)")
+                }
             }
         }
     }
+
+    func appendImage(_ image: CGImage, inrect rect: CGRect, completion: (_ numberOfFrames: Int) -> ()) {
+        guard let assetWriterVideoInput = assetWriterVideoInput else {
+            return
+        }
+
+        if assetWriterVideoInput.isReadyForMoreMediaData {
+            let lastFrameTime = CMTimeMake(Int64(self.numberOfFrames), self.videoFPS)
+            let presentationTime = self.numberOfFrames == 0 ? lastFrameTime : CMTimeAdd(lastFrameTime, self.frameDuration)
+
+            assetWriter?.startSession(atSourceTime: presentationTime)
+
+            if !self.appendPixelBufferForImageAtURL(image, pixelBufferAdaptor: self.pixelBufferAdopter!, presentationTime: presentationTime, inrect: rect) {
+                print("Error converting images to video: AVAssetWriterInputPixelBufferAdapter failed to append pixel buffer")
+                return
+            }
+            debugPrint("appended the pixel buffer at time \(presentationTime)")
+            self.numberOfFrames += 1
+            completion(self.numberOfFrames)
+        }
+    }
+
+    func stopWriting(_ completion: @escaping (_ savedUrl: URL) -> Void) {
+        assetWriterVideoInput?.markAsFinished()
+        assetWriter?.finishWriting {
+            self.saveVideoToLibrary(URL(string: self.writingPath!)!)
+            completion(URL(string: self.writingPath!)!)
+        }
+        debugPrint("stopped writing at path \(self.writingPath)")
+        sessionRunning = false
+    }
+
+    func createAssetWriter(_ path: String, size: CGSize) -> AVAssetWriter? {
+        let pathURL = URL(fileURLWithPath: path)
+
+        do {
+
+            let newWriter = try AVAssetWriter(outputURL: pathURL, fileType: AVFileTypeMPEG4)
+
+            let videoSettings: [String : AnyObject] = [
+                AVVideoCodecKey  : AVVideoCodecH264 as AnyObject,
+                AVVideoWidthKey  : size.width as AnyObject,
+                AVVideoHeightKey : size.height as AnyObject,
+                ]
+
+            assetWriterVideoInput = AVAssetWriterInput(mediaType: AVMediaTypeVideo, outputSettings: videoSettings)
+
+            if newWriter.canAdd(assetWriterVideoInput!) {
+                newWriter.add(assetWriterVideoInput!)
+            }
+            assetWriterVideoInput?.expectsMediaDataInRealTime = false
+
+            print("Created asset writer for \(size.width)x\(size.height) video")
+            return newWriter
+        } catch {
+            print("Error creating asset writer: \(error)")
+            return nil
+        }
+    }
+
+    func appendPixelBufferForImageAtURL(_ image: CGImage, pixelBufferAdaptor: AVAssetWriterInputPixelBufferAdaptor, presentationTime: CMTime, inrect rect: CGRect) -> Bool {
+        var appendSucceeded = false
+
+        autoreleasepool {
+            if let pixelBufferPool = pixelBufferAdaptor.pixelBufferPool {
+                let pixelBufferPointer = UnsafeMutablePointer<CVPixelBuffer?>.allocate(capacity: 1)
+                let status: CVReturn = CVPixelBufferPoolCreatePixelBuffer(
+                    kCFAllocatorDefault,
+                    pixelBufferPool,
+                    pixelBufferPointer
+                )
+
+                if let pixelBuffer = pixelBufferPointer.pointee , status == 0 {
+                    //fillPixelBufferFromImage(image, pixelBuffer: pixelBuffer, inrect: rect)
+
+                    let status = CVPixelBufferLockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: CVOptionFlags(0)))
+                    print(status)
+                    let pxdata = CVPixelBufferGetBaseAddress(pixelBuffer)
+
+                    let height = image.height
+                    let width = image.width
+
+                    let rgbColorSpace = CGColorSpaceCreateDeviceRGB()
+                    let context = CGContext(data: pxdata, width: Int(width),
+                                            height: Int(height), bitsPerComponent: 4, bytesPerRow: CVPixelBufferGetBytesPerRow(pixelBuffer), space: rgbColorSpace,
+                                            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+
+
+                    context?.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+                    
+                    let retValue = CVPixelBufferUnlockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: CVOptionFlags(0)))
+                    
+                    print(retValue)
+                    debugPrint("successfully created the pixel buffer")
+                    appendSucceeded = pixelBufferAdaptor.append(pixelBuffer, withPresentationTime: presentationTime)
+                    pixelBufferPointer.deinitialize()
+                } else {
+                    print("Error: Failed to allocate pixel buffer from pool")
+                }
+
+                pixelBufferPointer.deallocate(capacity: 1)
+            }
+        }
+
+        return appendSucceeded
+    }
+
+    func fillPixelBufferFromImage(_ image: CGImage, pixelBuffer: CVPixelBuffer, inrect rect: CGRect) {
+
+        /*CVPixelBufferLockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: CVOptionFlags(0)))
+
+        let height = image.height
+        let width = image.width
+
+        let data = CVPixelBufferGetBaseAddress(pixelBuffer)
+        let rgbColorSpace = CGColorSpaceCreateDeviceRGB()
+        let context = CGContext(data: data,
+                                width: Int(width),
+                                height: Int(height),
+                                bitsPerComponent: 8,
+                                bytesPerRow: width * 8,
+                                space: rgbColorSpace,
+                                bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue)
+
+        context?.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        let returnValue = CVPixelBufferUnlockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: CVOptionFlags(0)))
+
+        print(returnValue)*/
+    }
+
 
     func writeImagesAsMovie(_ allImages: [CGImage], videoPath: String, videoSize: CGSize, videoFPS: Int32) {
         // Create AVAssetWriter to write video
@@ -135,7 +288,7 @@ class VideoCreator: NSObject {
         }
 
         // If here, AVAssetWriter exists so create AVAssetWriterInputPixelBufferAdaptor
-        let writerInput = assetWriter.inputs.filter{ $0.mediaType == AVMediaTypeVideo }.first!
+        let writerInput = assetWriterVideoInput!
         let sourceBufferAttributes : [String : AnyObject] = [
             kCVPixelBufferPixelFormatTypeKey as String : Int(kCVPixelFormatType_32ARGB) as AnyObject,
             kCVPixelBufferWidthKey as String : videoSize.width as AnyObject,
@@ -144,15 +297,24 @@ class VideoCreator: NSObject {
         let pixelBufferAdaptor = AVAssetWriterInputPixelBufferAdaptor(assetWriterInput: writerInput, sourcePixelBufferAttributes: sourceBufferAttributes)
 
         // Start writing session
+
         assetWriter.startWriting()
         assetWriter.startSession(atSourceTime: kCMTimeZero)
 
         switch assetWriter.status {
         case .writing:
             print("Asset writer is writing")
-        default:
-            print("Error converting images to video: assetWriter is not writing:- \(assetWriter.status)")
+        case .failed:
+            print("Asset writer is failed")
+        case .cancelled:
+            print("Asset writer is cancelled")
+        case .completed:
+            print("Asset writer is completed")
+        case .unknown:
+            print("Asset writer is unknown")
         }
+
+        print(assetWriter.error)
 
         if (pixelBufferAdaptor.pixelBufferPool == nil) {
             print("Error converting images to video: pixelBufferPool nil after starting session")
@@ -174,10 +336,10 @@ class VideoCreator: NSObject {
                 let lastFrameTime = CMTimeMake(Int64(frameCount), videoFPS)
                 let presentationTime = frameCount == 0 ? lastFrameTime : CMTimeAdd(lastFrameTime, frameDuration)
 
-                if !self.appendPixelBufferForImageAtURL(allImages[frameCount], pixelBufferAdaptor: pixelBufferAdaptor, presentationTime: presentationTime) {
+                /*if !self.appendPixelBufferForImageAtURL(allImages[frameCount], pixelBufferAdaptor: pixelBufferAdaptor, presentationTime: presentationTime) {
                     print("Error converting images to video: AVAssetWriterInputPixelBufferAdapter failed to append pixel buffer")
                     return
-                }
+                }*/
 
                 frameCount += 1
             }
@@ -190,135 +352,14 @@ class VideoCreator: NSObject {
                     if (assetWriter.error != nil) {
                         print("Error converting images to video: \(assetWriter.error)")
                     } else {
-                        let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
-                        let documentDirectory = paths.first
-                        let dataPath = (documentDirectory)! + "FilterCam \(12).mov"
-                        self.saveVideoToLibrary(URL(fileURLWithPath: dataPath))
+                        //let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
+                        //let documentDirectory = paths.first
+                        //let dataPath = (documentDirectory)! + "FilterCam_\("filter").mov"
+                        self.saveVideoToLibrary(URL(fileURLWithPath: videoPath))
                         print("Converted images to movie @ \(videoPath)")
                     }
                 }
             }
         })
-    }
-
-    func saveVideoToLibrary(_ videoURL: URL) {
-        PHPhotoLibrary.requestAuthorization { status in
-            // Return if unauthorized
-            guard status == .authorized else {
-                print("Error saving video: unauthorized access")
-                return
-            }
-
-            // If here, save video to library
-            PHPhotoLibrary.shared().performChanges({
-                PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: videoURL)
-            }) { success, error in
-                if !success {
-                    print("Error saving video: \(error)")
-                }
-            }
-        }
-    }
-
-    func appendImage(_ image: CGImage, completion: (_ numberOfFrames: Int) -> ()) {
-        guard let assetWriterVideoInput = assetWriterVideoInput else {
-            return
-        }
-
-        if assetWriterVideoInput.isReadyForMoreMediaData {
-            let lastFrameTime = CMTimeMake(Int64(self.numberOfFrames), self.videoFPS)
-            let presentationTime = self.numberOfFrames == 0 ? lastFrameTime : CMTimeAdd(lastFrameTime, self.frameDuration)
-
-            if !self.appendPixelBufferForImageAtURL(image, pixelBufferAdaptor: self.pixelBufferAdopter!, presentationTime: presentationTime) {
-                print("Error converting images to video: AVAssetWriterInputPixelBufferAdapter failed to append pixel buffer")
-                return
-            }
-            self.numberOfFrames += 1
-            completion(self.numberOfFrames)
-        }
-    }
-
-    func stopWriting(_ completion: @escaping (_ savedUrl: URL) -> Void) {
-        assetWriterVideoInput?.markAsFinished()
-        assetWriter?.finishWriting {
-            completion(URL(string: self.writingPath!)!)
-        }
-        sessionRunning = false
-    }
-
-    func createAssetWriter(_ path: String, size: CGSize) -> AVAssetWriter? {
-        let pathURL = URL(fileURLWithPath: path)
-
-        do {
-
-            let newWriter = try AVAssetWriter(outputURL: pathURL, fileType: AVFileTypeMPEG4)
-
-            let videoSettings: [String : AnyObject] = [
-                AVVideoCodecKey  : AVVideoCodecH264 as AnyObject,
-                AVVideoWidthKey  : size.width as AnyObject,
-                AVVideoHeightKey : size.height as AnyObject,
-                ]
-
-            assetWriterVideoInput = AVAssetWriterInput(mediaType: AVMediaTypeVideo, outputSettings: videoSettings)
-            newWriter.add(assetWriterVideoInput!)
-
-            print("Created asset writer for \(size.width)x\(size.height) video")
-            return newWriter
-        } catch {
-            print("Error creating asset writer: \(error)")
-            return nil
-        }
-    }
-
-    func appendPixelBufferForImageAtURL(_ image: CGImage, pixelBufferAdaptor: AVAssetWriterInputPixelBufferAdaptor, presentationTime: CMTime) -> Bool {
-        var appendSucceeded = false
-
-        autoreleasepool {
-            if let pixelBufferPool = pixelBufferAdaptor.pixelBufferPool {
-                let pixelBufferPointer = UnsafeMutablePointer<CVPixelBuffer?>.allocate(capacity: 1)
-                let status: CVReturn = CVPixelBufferPoolCreatePixelBuffer(
-                    kCFAllocatorDefault,
-                    pixelBufferPool,
-                    pixelBufferPointer
-                )
-
-                if let pixelBuffer = pixelBufferPointer.pointee , status == 0 {
-                    fillPixelBufferFromImage(image, pixelBuffer: pixelBuffer)
-                    appendSucceeded = pixelBufferAdaptor.append(pixelBuffer, withPresentationTime: presentationTime)
-                    pixelBufferPointer.deinitialize()
-                } else {
-                    print("Error: Failed to allocate pixel buffer from pool")
-                }
-
-                pixelBufferPointer.deallocate(capacity: 1)
-            }
-        }
-
-        return appendSucceeded
-    }
-
-    func fillPixelBufferFromImage(_ image: CGImage, pixelBuffer: CVPixelBuffer) {
-
-        CVPixelBufferLockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: CVOptionFlags(0)))
-
-        let pixelData = CVPixelBufferGetBaseAddress(pixelBuffer)
-        let rgbColorSpace = CGColorSpaceCreateDeviceRGB()
-        
-        let height = image.height
-        let width = image.width
-
-        let context = CGContext(
-            data: pixelData,
-            width: Int(width),
-            height: Int(height),
-            bitsPerComponent: 8,
-            bytesPerRow: width * 8,
-            space: rgbColorSpace,
-            bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue
-        )
-
-        context?.draw(image, in: CGRect(x: 0, y: 0, width: CGFloat(width), height: CGFloat(height)))
-        
-        CVPixelBufferUnlockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: CVOptionFlags(0)))
     }
 }

@@ -24,8 +24,21 @@ class CameraCaptureViewController: UIViewController {
     fileprivate var fileNumber = 0
 
     @IBOutlet weak var previewLayerFrameView: UIView!
+
+    var writingFileNumber: Int? {
+        get {
+            return UserDefaults.standard.value(forKey: "writingFileNumber") as? Int
+        }
+        set {
+            UserDefaults.standard.set(writingFileNumber, forKey: "writingFileNumber")
+        }
+    }
+
     @IBOutlet weak var flipButton: UIButton!
     @IBOutlet weak var captureButton: UIButton!
+    private var numberOfFrames = 0
+
+    private var coreImageContext: CIContext?
 
     fileprivate var cgimages = [CGImage]()
 
@@ -41,7 +54,9 @@ class CameraCaptureViewController: UIViewController {
 
         previewLayerFrameView.layoutIfNeeded()
         previewImageView.isHidden = true
-        coreImageView = CoreImageView(frame: view.frame)
+        coreImageView = CoreImageView(frame: previewLayerFrameView.frame)
+        //coreImageContext = CIContext()
+
         view.insertSubview(coreImageView!, at: 0)
 
         videoFilterHandler = VideoBufferHandler()
@@ -55,33 +70,34 @@ class CameraCaptureViewController: UIViewController {
 
     func startVideoRecording(withPath path: String) {
         videoCreator = VideoCreator()
-//        videoCreator?.pixelFormat = kCVPixelFormatType_32ARGB
-//        videoCreator?.writingQueue = dispatch_queue_create("AssetWriterQueue", DISPATCH_QUEUE_SERIAL)
-//        videoCreator?.videoCreationType = .FromSeparateImages
-//
-//        videoCreator?.startWrting(atPath: path, size: UIScreen.mainScreen().bounds.size, videoFPS: 40)
+        videoCreator?.pixelFormat = kCVPixelFormatType_32ARGB
+        videoCreator?.writingQueue = DispatchQueue(label: "mediaInputQueue", attributes: [])
+        videoCreator?.videoCreationType = .fromSeparateImages
+
+        videoCreator?.startWrting(atPath: path, size: UIScreen.main.bounds.size, videoFPS: 30)
         isrecordingVideo = true
     }
 
-    func stopVideoRecording(_ handler: (_ savedUrl: URL) -> ()) {
+    func stopVideoRecording(_ handler: @escaping (_ savedUrl: URL) -> ()) {
 
         isrecordingVideo = false
         guard let videoCreator = videoCreator else {
             return
         }
 
-        let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
-        let documentDirectory = paths.first
-        let dataPath = (documentDirectory)! + "FilterCam \(12).mov"
+        //let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
+        //let documentDirectory = paths.first
+        //let dataPath = (documentDirectory)! + "FilterCam \("file").mov"
 
-        videoCreator.writeImagesAsMovie(cgimages, videoPath: dataPath, videoSize: UIScreen.main.bounds.size, videoFPS: 40)
-//        if videoCreator.sessionRunning {
-//            videoCreator.stopWriting { (url: NSURL) -> Void in
-//                handler(savedUrl: url)
-//            }
-//        }
+        //videoCreator.writeImagesAsMovie(cgimages, videoPath: string, videoSize: UIScreen.main.bounds.size, videoFPS: 40)
+        if videoCreator.sessionRunning {
+            videoCreator.stopWriting({ (url) in
+                handler(url as URL)
+            })
+        }
 
         cgimages = []
+        fileNumber += 1
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -155,14 +171,12 @@ class CameraCaptureViewController: UIViewController {
 
     func processVideo() {
 
-        let outputFilePath = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("FilterCam" + String(fileNumber) + ".mov")
-
-        fileNumber = fileNumber + 1
+        let outputFilePath = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("FilterCam" + "\(Date().timeIntervalSince1970)" + ".mov")
 
         if let _ = videoCreator {
             if isrecordingVideo{
                 self.stopVideoRecording({ (savedUrl) in
-//                    self.handleAfterRecordingVideo(savedUrl)
+                    //self.handleAfterRecordingVideo(savedUrl)
                 })
             } else {
                 self.startVideoRecording(withPath: outputFilePath.path)
@@ -186,24 +200,6 @@ class CameraCaptureViewController: UIViewController {
 
     }
 
-    fileprivate func handleTheOutputBuffer(_ sampleBuffer: CMSampleBuffer, transform: CGAffineTransform) {
-        let ciimage = CIImage(buffer: sampleBuffer).applying(AVCaptureDevicePosition.front.transform)
-        let filter = pixellate(5)
-        let image = filter(ciimage)
-        coreImageView?.image = image
-        let cgimage = coreImageView?.coreImageContext.createCGImage(image, from: UIScreen.main.bounds)
-
-        if let cgimage = cgimage {
-//            videoCreator?.appendImage(cgimage, completion: { (numberOfFrames) in
-//
-//            })
-            if isrecordingVideo {
-                   self.cgimages.append(cgimage)
-            }
-        }
-    }
-
-
     fileprivate func askSaveOrPreview() {
         let alertController = UIAlertController(title: "Video", message: "Video is Recorded", preferredStyle: .actionSheet)
 
@@ -226,6 +222,27 @@ class CameraCaptureViewController: UIViewController {
         alertController.addAction(saveAction)
 
         present(alertController, animated: true, completion: nil)
+    }
+
+
+    fileprivate func handleTheOutputBuffer(_ sampleBuffer: CMSampleBuffer, transform: CGAffineTransform) {
+        let ciimage = CIImage(buffer: sampleBuffer).applying(AVCaptureDevicePosition.front.transform)
+        let filter = pixellate(5)
+        numberOfFrames += 1
+        let image = filter(ciimage)
+        coreImageView?.image = image
+        let cgimage = coreImageView?.coreImageContext.createCGImage(image, from: image.extent)
+
+        debugPrint(numberOfFrames)
+
+        if let cgimage = cgimage {
+            if isrecordingVideo {
+                print()
+                videoCreator?.appendImage(cgimage, inrect: image.extent, completion: { (numberOfFrames) in
+
+                })
+            }
+        }
     }
 }
 
