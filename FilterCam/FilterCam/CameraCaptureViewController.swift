@@ -140,14 +140,16 @@ class CameraCaptureViewController: UIViewController {
         case .Camera:()
 
         case .Video:
-            if let videoFilterHandler = videoFilterHandler {
-                if videoFilterHandler.isrecordingVideo{
+            if let videoCreator = videoCreator {
+                if !videoCreator.sessionRunning {
                     captureButton.setTitle("Recording....", forState: .Normal)
                 } else {
                     captureButton.setTitle("Start recording", forState: .Normal)
                 }
-                processVideo()
+            } else {
+                captureButton.setTitle("Recording....", forState: .Normal)
             }
+            processVideo()
         }
     }
 

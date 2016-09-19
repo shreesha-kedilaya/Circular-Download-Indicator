@@ -64,8 +64,13 @@ class VideoCreator: NSObject {
                     discardedImages += 1
                 case .Succeeded:
                     if let image = image {
-                        self.appendImage(image, completion: { (numberOfFrames) in
-                        })
+                        let ciimage = CIImage(CGImage: image)
+                        let filteredImage = filter(ciimage)
+                        let cgimage = self.coreImageContext?.createCGImage(filteredImage, fromRect: filteredImage.extent)
+                        if let cgimage = cgimage {
+                            self.appendImage(cgimage, completion: { (numberOfFrames) in
+                            })
+                        }
                     }
                 case .Failed:
                     discardedImages += 1
@@ -87,8 +92,7 @@ class VideoCreator: NSObject {
         self.videoFPS = videoFPS
         frameDuration = CMTimeMake(1, videoFPS)
 
-        let eagleContext = EAGLContext(API: EAGLRenderingAPI.OpenGLES2)
-        coreImageContext = CIContext(EAGLContext: eagleContext)
+        coreImageContext = CIContext(options: nil)
 
         let sourceBufferAttributes : [String : AnyObject] = [
             kCVPixelBufferPixelFormatTypeKey as String : Int(pixelFormat ?? kCVPixelFormatType_32ARGB),
@@ -109,6 +113,8 @@ class VideoCreator: NSObject {
         sessionRunning = true
     }
 
+    //MARK: This method to be used when there is only 'CMSampleBuffer' to append with.
+    //Avoid this method as far as possible.
     func appendSampleBuffer(sampleBuffer: CMSampleBuffer, transform: CGAffineTransform, rect: CGRect, completion: (numberOfFrames: Int) -> ()) {
         let ciimage = CIImage(buffer: sampleBuffer).imageByApplyingTransform(transform)
 
@@ -140,6 +146,14 @@ class VideoCreator: NSObject {
         // Start writing session
         assetWriter.startWriting()
         assetWriter.startSessionAtSourceTime(kCMTimeZero)
+
+        switch assetWriter.status {
+        case .Writing:
+            print("Asset writer is writing")
+        default:
+            print("Error converting images to video: assetWriter is not writing:- \(assetWriter.status)")
+        }
+
         if (pixelBufferAdaptor.pixelBufferPool == nil) {
             print("Error converting images to video: pixelBufferPool nil after starting session")
             return
@@ -170,6 +184,7 @@ class VideoCreator: NSObject {
 
             // No more images to add? End video.
             if (frameCount >= numImages) {
+                self.sessionRunning = false
                 writerInput.markAsFinished()
                 assetWriter.finishWritingWithCompletionHandler {
                     if (assetWriter.error != nil) {
@@ -228,6 +243,7 @@ class VideoCreator: NSObject {
         assetWriter?.finishWritingWithCompletionHandler {
             completion(savedUrl: NSURL(string: self.writingPath!)!)
         }
+        sessionRunning = false
     }
 
     func createAssetWriter(path: String, size: CGSize) -> AVAssetWriter? {
