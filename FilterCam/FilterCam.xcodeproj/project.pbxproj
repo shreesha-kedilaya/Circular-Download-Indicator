@@ -66,7 +66,7 @@
 		113BF9241D77047900F0475B /* GaleryCollectionViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GaleryCollectionViewController.swift; sourceTree = "<group>"; };
 		113BF9261D7704EF00F0475B /* GaleryCollectionViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GaleryCollectionViewCell.swift; sourceTree = "<group>"; };
 		113BF9281D7706D800F0475B /* GaleryCollectionViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GaleryCollectionViewModel.swift; sourceTree = "<group>"; };
-		119306401D86B61100EFFA7F /* Filters.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Filters.swift; sourceTree = "<group>"; };
+		119306401D86B61100EFFA7F /* Filters.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Filters.swift; path = ../Filters.swift; sourceTree = "<group>"; };
 		11B043E61D780C3700C2FCE0 /* FilterViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FilterViewController.swift; sourceTree = "<group>"; };
 		11B043E81D78148E00C2FCE0 /* PreviewVideoViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PreviewVideoViewController.swift; sourceTree = "<group>"; };
 		11B043EA1D782EB700C2FCE0 /* HomeTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HomeTableViewCell.swift; sourceTree = "<group>"; };
@@ -95,6 +95,7 @@
 				110EB7EA1D8C2DD10098440C /* VideoCreator.swift */,
 				110EB7F01D8D160A0098440C /* VideoBufferHandler.swift */,
 				110EB7EC1D8D127E0098440C /* CoreImageView.swift */,
+				119306401D86B61100EFFA7F /* Filters.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -129,7 +130,6 @@
 				113BF91F1D7701B600F0475B /* CollectionViewCells */,
 				113BF9031D75CE6D00F0475B /* AppDelegate.swift */,
 				112F85E01D7723CC007C8298 /* PermissionManager.swift */,
-				119306401D86B61100EFFA7F /* Filters.swift */,
 				113BF9071D75CE6D00F0475B /* Main.storyboard */,
 				113BF90A1D75CE6D00F0475B /* Assets.xcassets */,
 				113BF90C1D75CE6D00F0475B /* LaunchScreen.storyboard */,

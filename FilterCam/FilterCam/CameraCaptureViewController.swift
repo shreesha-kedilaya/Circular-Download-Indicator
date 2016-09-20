@@ -227,7 +227,7 @@ class CameraCaptureViewController: UIViewController {
 
     fileprivate func handleTheOutputBuffer(_ sampleBuffer: CMSampleBuffer, transform: CGAffineTransform) {
         let ciimage = CIImage(buffer: sampleBuffer).applying(AVCaptureDevicePosition.front.transform)
-        let filter = pixellate(5)
+        let filter = hueAdjust(2)
         numberOfFrames += 1
         let image = filter(ciimage)
         coreImageView?.image = image
