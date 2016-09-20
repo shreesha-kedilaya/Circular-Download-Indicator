@@ -11,6 +11,10 @@ import UIKit
 class FilterViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
 
     @IBOutlet weak var filterCollectionView: UICollectionView!
+
+    var filter: Filter?
+    var image: UIImage?
+
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Filter"
@@ -27,11 +31,20 @@ class FilterViewController: UIViewController, UICollectionViewDataSource, UIColl
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "FilterCollectionViewCell", for: indexPath) as? FilterCollectionViewCell
         cell?.nameLabel.text = "Filter"
-        cell?.filterImageView.image = UIImage(named: "placeHolderVideo")
+        if let image = image {
+            cell?.filterImageView.image = image
+        } else {
+            cell?.filterImageView.image = UIImage(named: "placeHolderVideo")
+        }
+
         return cell!
     }
 
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         return CGSize(width: 150, height: 175)
+    }
+
+    func filters() -> [Filters] {
+        return []
     }
 }

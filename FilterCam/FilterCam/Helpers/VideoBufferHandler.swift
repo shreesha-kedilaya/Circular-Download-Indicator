@@ -171,7 +171,7 @@ class VideoBufferHandler: NSObject, CaptureDelagateProtocol {
                         callBack(image)
                     }
                 } else {
-                    callBack(nil)
+                    callBack(image)
                 }
             }
         }

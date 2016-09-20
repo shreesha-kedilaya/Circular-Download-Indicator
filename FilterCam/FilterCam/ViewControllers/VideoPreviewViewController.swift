@@ -111,6 +111,7 @@ class VideoPreviewViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        videoPlayerLayer.frame = videoPreviewView.frame
     }
 
     fileprivate func addPlayerItemToPlayer() {
