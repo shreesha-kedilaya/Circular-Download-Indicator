@@ -12,14 +12,23 @@ import GLKit
 class CoreImageView: GLKView {
     var image: CIImage? {
         didSet {
+            glClearColor(0.5, 0.5, 0.5, 1.0);
+            glClear(GLbitfield(GL_COLOR_BUFFER_BIT));
+
+            // set the blend mode to "source over" so that CI will use that
+            glEnable(GLenum(GL_BLEND));
+            glBlendFunc(GLenum(GL_ONE), GLenum(GL_ONE_MINUS_SRC_ALPHA));
             display()
         }
     }
-    var coreImageContext: CIContext
+    var coreImageContext: CIContext?
+    var cgimage: CGImage?
+    fileprivate (set) var eaglContext: EAGLContext?
 
     override convenience init(frame: CGRect) {
         let eaglContext = EAGLContext(api: EAGLRenderingAPI.openGLES2)
         self.init(frame: frame, context: eaglContext!)
+        self.eaglContext = eaglContext
     }
 
     override init(frame: CGRect, context eaglContext: EAGLContext) {
@@ -37,7 +46,8 @@ class CoreImageView: GLKView {
         if let img = image {
             let scale = self.window?.screen.scale ?? 1.0
             let destRect = bounds.applying(CGAffineTransform(scaleX: scale, y: scale))
-            coreImageContext.draw(img, in: destRect, from: img.extent)
+            cgimage = coreImageContext?.createCGImage(img, from: img.extent)
+            coreImageContext?.draw(img, in: destRect, from: img.extent)
         }
     }
 }

@@ -95,7 +95,7 @@ class VideoBufferHandler: NSObject, CaptureDelagateProtocol {
     }
 
     fileprivate func setTheVideoOutput() {
-        videoCaptureOutput.videoSettings = [(kCVPixelBufferPixelFormatTypeKey as NSString) : NSNumber(value: kCVPixelFormatType_420YpCbCr8BiPlanarFullRange as UInt32)]
+        videoCaptureOutput.videoSettings = [(kCVPixelBufferPixelFormatTypeKey as NSString) : NSNumber(value: kCVPixelFormatType_32BGRA as UInt32)]
 
         captureDelegate = CaptureBufferDelegate(delegate: self)
 
@@ -110,7 +110,7 @@ class VideoBufferHandler: NSObject, CaptureDelagateProtocol {
         for dev in devices {
             if (dev as AnyObject).position == devicePosition {
                 device = dev as? AVCaptureDevice
-                break;
+                break
             }
         }
 
@@ -164,8 +164,12 @@ class VideoBufferHandler: NSObject, CaptureDelagateProtocol {
                     if let filter = filter {
 
                         let filteredImage = filter(ciimage)
-                        let uiimage = UIImage(ciImage: filteredImage)
-                        callBack(uiimage)
+                        if let filteredImage = filteredImage {
+                            let uiimage = UIImage(ciImage: filteredImage)
+                            callBack(uiimage)
+                        } else {
+                            callBack(image)
+                        }
 
                     } else {
                         callBack(image)
@@ -181,18 +185,15 @@ class VideoBufferHandler: NSObject, CaptureDelagateProtocol {
 
         let videoDevice = getCameraDevice(AVMediaTypeVideo, devicePosition: devicePosition)
 
-        if let media : AVCaptureDeviceInput = try! AVCaptureDeviceInput.init(device: videoDevice) {
+        let media : AVCaptureDeviceInput = try! AVCaptureDeviceInput.init(device: videoDevice)
 
-            captureCameraInput = nil
-            captureCameraInput = media
+        captureCameraInput = nil
+        captureCameraInput = media
 
-            if cameraCaptureSession.canAddInput(captureCameraInput) {
-                cameraCaptureSession.addInput(captureCameraInput)
-            } else {
-                print("Failed to add media input.")
-            }
+        if cameraCaptureSession.canAddInput(captureCameraInput) {
+            cameraCaptureSession.addInput(captureCameraInput)
         } else {
-            print("Failed to create media capture device.")
+            print("Failed to add media input.")
         }
     }
 

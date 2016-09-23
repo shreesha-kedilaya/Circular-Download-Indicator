@@ -10,7 +10,7 @@ import Foundation
 import CoreImage
 import UIKit
 
-typealias Filter = (CIImage) -> CIImage
+typealias Filter = (CIImage) -> CIImage?
 
 
 struct FilterGenerator {
@@ -25,16 +25,7 @@ struct FilterGenerator {
                 ] as [String : Any]
             let filter = CIFilter(name: "CIGaussianBlur",
                                   withInputParameters: parameters)
-            return filter!.outputImage!
-        }
-    }
-
-    static func colorGenerator(color: UIColor) -> Filter {
-        return { _ in
-            let parameters = [kCIInputColorKey: color]
-            let filter = CIFilter(name: "CIConstantColorGenerator",
-                                  withInputParameters: parameters)
-            return filter!.outputImage!
+            return filter!.outputImage
         }
     }
 
@@ -46,7 +37,7 @@ struct FilterGenerator {
                 ] as [String : Any]
             let filter = CIFilter(name: "CIHueAdjust",
                                   withInputParameters: parameters)
-            return filter!.outputImage!
+            return filter!.outputImage
         }
     }
 
@@ -89,7 +80,7 @@ struct FilterGenerator {
             let filter = CIFilter(name: "CISourceOverCompositing",
                                   withInputParameters: parameters)
             let cropRect = image.extent
-            return filter!.outputImage!.cropping(to: cropRect)
+            return filter!.outputImage?.cropping(to: cropRect)
         }
     }
 
@@ -104,7 +95,7 @@ struct FilterGenerator {
                 "inputRadius0": radius,
                 "inputRadius1": (radius + 1)
             ]
-            return CIFilter(name: "CIRadialGradient", withInputParameters: params)!.outputImage!
+            return CIFilter(name: "CIRadialGradient", withInputParameters: params)!.outputImage
         }
     }
 
@@ -119,14 +110,7 @@ struct FilterGenerator {
                                   withInputParameters: parameters)
             
             let cropRect = image.extent
-            return filter!.outputImage!.cropping(to: cropRect)
-        }
-    }
-    
-    static func colorOverlay(color: UIColor) -> Filter {
-        return { image in
-            let overlay = colorGenerator(color: color)(image)
-            return compositeSourceOver(overlay: overlay)(image)
+            return filter!.outputImage?.cropping(to: cropRect)
         }
     }
 }
@@ -135,13 +119,11 @@ enum Filters {
     case hueAdjust(angleInRadians: Float)
     case pixellate(scale: Float)
     case blur(radius: Double)
-    case colorGenerator(color: UIColor)
     case kaleidoscope
     case vibrance(amount: Float)
     case compositeSourceOver(overlay: CIImage)
     case radialGradient(center: CGPoint, radius: CGFloat)
     case blendWithMask(background: CIImage, mask: CIImage)
-    case colorOverlay(color: UIColor)
 
     func filter() -> Filter {
 
@@ -153,8 +135,6 @@ enum Filters {
             filter = FilterGenerator.pixellate(scale: scale)
         case let .blur(radius):
             filter = FilterGenerator.blur(radius: radius)
-        case let .colorGenerator(color):
-            filter = FilterGenerator.colorGenerator(color: color)
         case .kaleidoscope:
             filter = FilterGenerator.kaleidoscope()
         case let .vibrance(amount):
@@ -165,8 +145,6 @@ enum Filters {
             filter = FilterGenerator.radialGradient(center: center, radius: radius)
         case let .blendWithMask(background, mask):
             filter = FilterGenerator.blendWithMask(background: background, mask: mask)
-        case let .colorOverlay(color):
-            filter = FilterGenerator.colorOverlay(color: color)
 
         }
         return filter

@@ -44,10 +44,10 @@
                                 </constraints>
                                 <prototypes>
                                     <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" reuseIdentifier="HomeTableViewCell" id="dej-B4-cD9" customClass="HomeTableViewCell" customModule="FilterCam" customModuleProvider="target">
-                                        <rect key="frame" x="0.0" y="92" width="375" height="44"/>
+                                        <rect key="frame" x="0.0" y="92" width="1000" height="44"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                         <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="dej-B4-cD9" id="5jS-rh-MWY">
-                                            <frame key="frameInset" width="375" height="44"/>
+                                            <frame key="frameInset" width="1000" height="44"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
                                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5Av-TG-XBp">
@@ -353,6 +353,22 @@
             </objects>
             <point key="canvasLocation" x="-361" y="208"/>
         </scene>
+        <!--Navigation Controller-->
+        <scene sceneID="9sg-IC-vT8">
+            <objects>
+                <navigationController id="lY8-9t-Txl" sceneMemberID="viewController">
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="fRX-BT-CdG">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="44"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </navigationBar>
+                    <connections>
+                        <segue destination="ZkC-CA-nS2" kind="relationship" relationship="rootViewController" id="Xtz-2B-avO"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="j74-f3-CQ5" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-3631" y="991"/>
+        </scene>
         <!--Filter View Controller-->
         <scene sceneID="0pW-hz-Fbe">
             <objects>
@@ -365,8 +381,27 @@
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
+                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="XNa-fr-FPx"/>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="fpX-q4-GEy">
+                                <state key="normal" title="Cancel"/>
+                                <variation key="heightClass=regular-widthClass=regular">
+                                    <fontDescription key="fontDescription" type="system" pointSize="20"/>
+                                </variation>
+                                <connections>
+                                    <action selector="cancelButtonDidClick:" destination="ZkC-CA-nS2" eventType="touchUpInside" id="xq3-kn-KvQ"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="XLf-RY-uBa">
+                                <state key="normal" title="Select"/>
+                                <variation key="heightClass=regular-widthClass=regular">
+                                    <fontDescription key="fontDescription" type="system" pointSize="20"/>
+                                </variation>
+                                <connections>
+                                    <action selector="selectButtonDidClick:" destination="ZkC-CA-nS2" eventType="touchUpInside" id="T4f-xR-Xb6"/>
+                                </connections>
+                            </button>
                             <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="82D-gu-leC">
-                                <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <color key="backgroundColor" red="0.1137254902" green="0.1137254902" blue="0.1137254902" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <collectionViewFlowLayout key="collectionViewLayout" minimumLineSpacing="10" minimumInteritemSpacing="10" id="19f-9d-lEB">
                                     <size key="itemSize" width="101" height="100"/>
                                     <size key="headerReferenceSize" width="0.0" height="0.0"/>
@@ -418,21 +453,33 @@
                                 </connections>
                             </collectionView>
                         </subviews>
-                        <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <color key="backgroundColor" red="0.1137254902" green="0.1137254902" blue="0.1137254902" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
-                            <constraint firstItem="mZz-bF-lFy" firstAttribute="top" secondItem="82D-gu-leC" secondAttribute="bottom" id="0hc-ou-QpZ"/>
-                            <constraint firstItem="82D-gu-leC" firstAttribute="top" secondItem="kCZ-t8-1Be" secondAttribute="top" constant="8" id="ODF-Uz-S7k"/>
-                            <constraint firstAttribute="trailing" secondItem="82D-gu-leC" secondAttribute="trailing" constant="8" id="h7t-SS-ZXO"/>
-                            <constraint firstItem="82D-gu-leC" firstAttribute="leading" secondItem="kCZ-t8-1Be" secondAttribute="leading" constant="8" id="nM6-O5-fO2"/>
+                            <constraint firstItem="mZz-bF-lFy" firstAttribute="top" secondItem="82D-gu-leC" secondAttribute="bottom" id="7sZ-0D-INQ"/>
+                            <constraint firstItem="82D-gu-leC" firstAttribute="top" secondItem="Kmy-Jt-7Fz" secondAttribute="bottom" constant="8" id="9E9-P5-aCa"/>
+                            <constraint firstItem="fpX-q4-GEy" firstAttribute="top" secondItem="Kmy-Jt-7Fz" secondAttribute="bottom" constant="20" id="J60-3F-DX3"/>
+                            <constraint firstItem="XNa-fr-FPx" firstAttribute="leading" secondItem="kCZ-t8-1Be" secondAttribute="leading" id="Jvh-MI-h5q"/>
+                            <constraint firstItem="XNa-fr-FPx" firstAttribute="top" secondItem="Kmy-Jt-7Fz" secondAttribute="bottom" id="Lg0-fk-AB7"/>
+                            <constraint firstAttribute="trailing" secondItem="XNa-fr-FPx" secondAttribute="trailing" id="RaE-c3-EXK"/>
+                            <constraint firstItem="XLf-RY-uBa" firstAttribute="top" secondItem="Kmy-Jt-7Fz" secondAttribute="bottom" constant="20" id="TGB-Yd-TzR"/>
+                            <constraint firstItem="mZz-bF-lFy" firstAttribute="top" secondItem="XNa-fr-FPx" secondAttribute="bottom" id="YhH-H4-G9Z"/>
+                            <constraint firstItem="fpX-q4-GEy" firstAttribute="leading" secondItem="kCZ-t8-1Be" secondAttribute="leading" constant="20" id="eHN-dT-6So"/>
+                            <constraint firstItem="82D-gu-leC" firstAttribute="leading" secondItem="kCZ-t8-1Be" secondAttribute="leading" constant="8" id="pAm-jh-gLg"/>
+                            <constraint firstAttribute="trailingMargin" secondItem="XLf-RY-uBa" secondAttribute="trailing" constant="4" id="qfQ-v3-cnA"/>
+                            <constraint firstAttribute="trailing" secondItem="82D-gu-leC" secondAttribute="trailing" constant="8" id="sdx-pR-JAM"/>
                         </constraints>
                     </view>
+                    <navigationItem key="navigationItem" id="yU7-Ze-D9I"/>
                     <connections>
+                        <outlet property="cancelButton" destination="fpX-q4-GEy" id="9Md-TC-45g"/>
                         <outlet property="filterCollectionView" destination="82D-gu-leC" id="br6-B1-oD0"/>
+                        <outlet property="previewImageView" destination="XNa-fr-FPx" id="bZe-91-taE"/>
+                        <outlet property="selectButton" destination="XLf-RY-uBa" id="Ec9-Zw-7bb"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="e7o-4k-Qvg" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-2088" y="1014"/>
+            <point key="canvasLocation" x="-2088.8000000000002" y="1013.3433283358322"/>
         </scene>
         <!--Video Preview View Controller-->
         <scene sceneID="8cG-Xn-DY0">
@@ -569,10 +616,10 @@
                                 <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <prototypes>
                                     <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" reuseIdentifier="SettingsTableViewCell" rowHeight="65" id="noM-zJ-Mej" customClass="SettingsTableViewCell" customModule="FilterCam" customModuleProvider="target">
-                                        <rect key="frame" x="0.0" y="28" width="375" height="65"/>
+                                        <rect key="frame" x="0.0" y="28" width="1000" height="65"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                         <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="noM-zJ-Mej" id="fFM-jo-7Dh">
-                                            <frame key="frameInset" width="375" height="65"/>
+                                            <frame key="frameInset" width="1000" height="65"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
                                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ryO-pN-P9L">

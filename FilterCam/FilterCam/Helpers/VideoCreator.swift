@@ -28,12 +28,12 @@ class VideoCreator: NSObject {
     fileprivate var videoFPS: Int32 = 25
     fileprivate var frameDuration: CMTime!
     private var filter: Filter
+    private var coreImageContext: CIContext?
 
     var pixelFormat: OSType?
     var size: CGSize?
     var writingQueue: DispatchQueue?
     var videoCreationType = CreationType.fromSeparateImages
-    fileprivate var coreImageContext: CIContext?
 
     fileprivate (set) var sessionRunning = false
     fileprivate (set) var numberOfFrames = 0
@@ -68,10 +68,21 @@ class VideoCreator: NSObject {
                     if let image = image {
                         let ciimage = CIImage(cgImage: image)
                         let filteredImage = filter(ciimage)
-                        let cgimage = self.coreImageContext?.createCGImage(filteredImage, from: filteredImage.extent)
-                        if let cgimage = cgimage {
-                            self.appendImage(cgimage, inrect: rect, completion: { (numberOfFrames) in
-                            })
+                        if let filteredImage = filteredImage {
+                            let cgimage = self.coreImageContext?.createCGImage(filteredImage, from: filteredImage.extent)
+                            if let cgimage = cgimage {
+
+                                self.appendImage(cgimage, inrect: rect, completion: { (numberOfFrames) in
+                                })
+                            }
+
+                        } else {
+                            let cgimage = self.coreImageContext?.createCGImage(ciimage, from: ciimage.extent)
+                            if let cgimage = cgimage {
+                                self.appendImage(cgimage, inrect: rect, completion: { (numberOfFrames) in
+                                })
+                            }
+
                         }
                     }
                 case .failed:
@@ -87,14 +98,19 @@ class VideoCreator: NSObject {
         }
     }
 
+    //TODO: Add endSessionAtSourceTime(_:_)
+    func abortWriting() {
+        assetWriter?.cancelWriting()
+    }
+
     func startWrting(atPath path: String, size: CGSize, videoFPS: Int32) {
         self.size = size
         writingPath = path
         assetWriter = createAssetWriter(writingPath ?? "", size: size)
         self.videoFPS = videoFPS
         frameDuration = CMTimeMake(1, videoFPS)
-
-        coreImageContext = CIContext(options: nil)
+        let eaglContext = EAGLContext(api: .openGLES2)
+        coreImageContext = CIContext(eaglContext: eaglContext!)
 
         let sourceBufferAttributes : [String : AnyObject] = [
             kCVPixelBufferPixelFormatTypeKey as String : Int(pixelFormat ?? kCVPixelFormatType_32ARGB) as AnyObject,
@@ -162,34 +178,35 @@ class VideoCreator: NSObject {
             return
         }
 
+        let lastFrameTime = CMTimeMake(Int64(self.numberOfFrames), self.videoFPS)
+        let presentationTime = self.numberOfFrames == 0 ? lastFrameTime : CMTimeAdd(lastFrameTime, self.frameDuration)
+
+        assetWriter?.startSession(atSourceTime: presentationTime)
+
         if assetWriterVideoInput.isReadyForMoreMediaData {
-            let lastFrameTime = CMTimeMake(Int64(self.numberOfFrames), self.videoFPS)
-            let presentationTime = self.numberOfFrames == 0 ? lastFrameTime : CMTimeAdd(lastFrameTime, self.frameDuration)
-
-            assetWriter?.startSession(atSourceTime: presentationTime)
-
-            Async.global(closer: {
-
-                if !self.appendPixelBufferForImageAtURL(image, pixelBufferAdaptor: self.pixelBufferAdopter!, presentationTime: presentationTime, inrect: rect) {
-                    self.debugPrint("Error converting images to video: AVAssetWriterInputPixelBufferAdapter failed to append pixel buffer")
-                    return
-                }
-                self.debugPrint("appended the pixel buffer at time \(presentationTime)")
-                self.numberOfFrames += 1
-                completion(self.numberOfFrames)
-
-            })
+            if !self.appendPixelBufferForImageAtURL(image, pixelBufferAdaptor: self.pixelBufferAdopter!, presentationTime: presentationTime, inrect: rect) {
+                self.debugPrint("Error converting images to video: AVAssetWriterInputPixelBufferAdapter failed to append pixel buffer")
+                return
+            }
+            self.debugPrint("appended the pixel buffer at time \(presentationTime)")
+            self.numberOfFrames += 1
+            completion(self.numberOfFrames)
         }
     }
 
     func stopWriting(_ completion: @escaping (_ savedUrl: URL) -> Void) {
-        assetWriterVideoInput?.markAsFinished()
-        assetWriter?.finishWriting {
-            self.saveVideoToLibrary(URL(string: self.writingPath!)!)
-            completion(URL(string: self.writingPath!)!)
+        if sessionRunning {
+
+            if assetWriter?.status == .writing {
+                assetWriterVideoInput?.markAsFinished()
+                assetWriter?.finishWriting {
+                    self.saveVideoToLibrary(URL(string: self.writingPath!)!)
+                    completion(URL(string: self.writingPath!)!)
+                }
+                debugPrint("stopped writing at path \(self.writingPath)")
+                sessionRunning = false
+            }
         }
-        debugPrint("stopped writing at path \(self.writingPath)")
-        sessionRunning = false
     }
 
     func createAssetWriter(_ path: String, size: CGSize) -> AVAssetWriter? {
@@ -223,57 +240,6 @@ class VideoCreator: NSObject {
     func appendPixelBufferForImageAtURL(_ image: CGImage, pixelBufferAdaptor: AVAssetWriterInputPixelBufferAdaptor, presentationTime: CMTime, inrect rect: CGRect) -> Bool {
         var appendSucceeded = false
 
-        //WARNING: Have to check why this is crashing
-        /*autoreleasepool {
-            if let pixelBufferPool = pixelBufferAdaptor.pixelBufferPool {
-                let pixelBufferPointer = UnsafeMutablePointer<CVPixelBuffer?>.allocate(capacity: 1)
-                let status: CVReturn = CVPixelBufferPoolCreatePixelBuffer(
-                    kCFAllocatorDefault,
-                    pixelBufferPool,
-                    pixelBufferPointer
-                )
-
-                if let pixelBuffer = pixelBufferPointer.pointee , status == 0 {
-                    //fillPixelBufferFromImage(image, pixelBuffer: pixelBuffer, inrect: rect)
-
-                    let status = CVPixelBufferLockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: CVOptionFlags(0)))
-                    debugPrint(status)
-                    let pxdata = CVPixelBufferGetBaseAddress(pixelBuffer)
-
-                    let height = image.height
-                    let width = image.width
-
-                    let rgbColorSpace = CGColorSpaceCreateDeviceRGB()
-                    let context = CGContext(data: pxdata, width: Int(width),
-                                            height: Int(height), bitsPerComponent: 8, bytesPerRow: image.bytesPerRow, space: rgbColorSpace,
-                                            bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue)
-
-                    let uiimage = UIImage(cgImage: image)
-                    context?.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
-                    
-                    let retValue = CVPixelBufferUnlockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: CVOptionFlags(0)))
-                    
-                    debugPrint(retValue)
-                    debugPrint("successfully created the pixel buffer")
-                    appendSucceeded = pixelBufferAdaptor.append(pixelBuffer, withPresentationTime: presentationTime)
-                    pixelBufferPointer.deinitialize()
-                } else {
-                    debugPrint("Error: Failed to allocate pixel buffer from pool")
-                }
-
-                pixelBufferPointer.deallocate(capacity: 1)
-            }
-        }
-        debugPrint(appendSucceeded)
-        return appendSucceeded*/
-
-        /*let uiimage = UIImage(cgImage: image)
-        if let pixelBuffer = pixelBufferFromImage(image) {
-            if sessionRunning{
-                appendSucceeded = pixelBufferAdaptor.append(pixelBuffer, withPresentationTime: presentationTime)
-            }
-         }*/
-
         if sessionRunning {
             if let assetWriter = assetWriter {
                 if assetWriter.status == .writing {
@@ -294,12 +260,12 @@ class VideoCreator: NSObject {
             "kCVPixelBufferCGBitmapContextCompatibilityKey" as NSObject: true
         ]
 
-        let width = image.width
-        let height = image.height
         var pixelBufferPointer: UnsafeMutablePointer<CVPixelBuffer?>?
 
-        autoreleasepool {
+        let width = image.width
+        let height = image.height
 
+        autoreleasepool {
             pixelBufferPointer = UnsafeMutablePointer<CVPixelBuffer?>.allocate(capacity: 1)
             if let pixelBufferPointer = pixelBufferPointer {
 
@@ -327,8 +293,19 @@ class VideoCreator: NSObject {
             } else {
                 debugPrint("failed to create the pixel buffer pointer")
             }
+
+//        pixelBufferPointer = UnsafeMutablePointer<CVPixelBuffer?>.allocate(capacity: 1)
+//        if let pixelBufferpool = self.pixelBufferAdopter?.pixelBufferPool {
+//            let status = CVPixelBufferPoolCreatePixelBuffer(nil, pixelBufferpool, pixelBufferPointer!)
+//
+//            coreImageContext?.render(image, to: pixelBufferPointer!.pointee!, bounds: image.extent, colorSpace: CGColorSpaceCreateDeviceRGB())
+////            [_ciContext drawImage:drawImage inRect:_videoPreviewViewBounds fromRect:drawRect];
+
+    
+
         }
         let pointee = pixelBufferPointer?.pointee
+
         pixelBufferPointer?.deinitialize()
         pixelBufferPointer?.deallocate(capacity: 1)
         return pointee

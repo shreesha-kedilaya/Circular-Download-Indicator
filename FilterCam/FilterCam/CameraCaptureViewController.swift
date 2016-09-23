@@ -23,6 +23,8 @@ class CameraCaptureViewController: UIViewController {
 
     @IBOutlet weak var previewLayerFrameView: UIView!
 
+    fileprivate var currentFilter: Filter?
+
     var writingFileNumber: Int? {
         get {
             return UserDefaults.standard.value(forKey: "writingFileNumber") as? Int
@@ -34,29 +36,23 @@ class CameraCaptureViewController: UIViewController {
 
     @IBOutlet weak var flipButton: UIButton!
     @IBOutlet weak var captureButton: UIButton!
-    private var numberOfFrames = 0
 
-    fileprivate var videoFilterHandler: VideoBufferHandler?
     fileprivate lazy var viewModel = CameraCaptureViewModel()
     private var currentImage: CIImage?
 
-    fileprivate var isrecordingVideo = false
-
-    var videoCreator: VideoCreator?
+    fileprivate var filterManager: FilterManager?
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
         previewLayerFrameView.layoutIfNeeded()
         previewImageView.isHidden = true
-        coreImageView = CoreImageView(frame: previewLayerFrameView.frame)
-        //coreImageContext = CIContext()
+        filterManager = FilterManager(frame: previewLayerFrameView.frame, transForm: AVCaptureDevicePosition.back.transform)
 
-        view.insertSubview(coreImageView!, at: 0)
-
-        videoFilterHandler = VideoBufferHandler()
-
-        videoFilterHandler?.bufferCallBack = handleTheOutputBuffer
+        if let coreImageView = filterManager?.coreImageView(withFrame: nil) {
+            self.coreImageView = coreImageView
+            view.insertSubview(self.coreImageView!, at: 0)
+        }
 
         title = "Capture"
 
@@ -64,34 +60,15 @@ class CameraCaptureViewController: UIViewController {
     }
 
     func startVideoRecording(withPath path: String) {
-        if let videoFilterHandler = videoFilterHandler {
-            videoCreator = VideoCreator(FilterGenerator.hueAdjust(angleInRadians: 0.5), bufferHandler: videoFilterHandler)
-            videoCreator?.pixelFormat = kCVPixelFormatType_32ARGB
-            videoCreator?.writingQueue = DispatchQueue(label: "mediaInputQueue", attributes: [])
-            videoCreator?.videoCreationType = .fromSeparateImages
 
-            videoCreator?.startWrting(atPath: path, size: UIScreen.main.bounds.size, videoFPS: 30)
-            isrecordingVideo = true
-        }
+        filterManager?.startWriting(withPath: path, liveVideo: true, videoAsset: nil, size: view.bounds.size)
     }
 
     func stopVideoRecording(_ handler: @escaping (_ savedUrl: URL) -> ()) {
 
-        isrecordingVideo = false
-        guard let videoCreator = videoCreator else {
-            return
-        }
-
-        //let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
-        //let documentDirectory = paths.first
-        //let dataPath = (documentDirectory)! + "FilterCam \("file").mov"
-
-        //videoCreator.writeImagesAsMovie(cgimages, videoPath: string, videoSize: UIScreen.main.bounds.size, videoFPS: 40)
-        if videoCreator.sessionRunning {
-            videoCreator.stopWriting({ (url) in
-                handler(url as URL)
-            })
-        }
+        filterManager?.stopWriting(completion: { (url) in
+            handler(url)
+        })
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -108,13 +85,13 @@ class CameraCaptureViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        videoFilterHandler?.startSession()
+        filterManager?.startCameraSession()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         NotificationCenter.default.removeObserver(self)
-        videoFilterHandler?.stopSession()
+        filterManager?.stopCameraSession()
     }
 
     @IBAction func flipImageDidTap(_ sender: AnyObject) {
@@ -123,11 +100,14 @@ class CameraCaptureViewController: UIViewController {
 
     @IBAction func didTapOnFilter(_ sender: AnyObject) {
         let filterViewController = storyboard?.instantiateViewController(withIdentifier: "FilterViewController") as? FilterViewController
-        filterViewController?.filter = FilterGenerator.pixellate(scale: 6)
-        let cgimage = self.coreImageView?.coreImageContext.createCGImage(self.currentImage!, from: self.currentImage!.extent)
-        let uiimage = UIImage(cgImage: cgimage!)
-        filterViewController?.image = uiimage
-        self.navigationController?.pushViewController(filterViewController!, animated: true)
+        if let filterManager = filterManager {
+
+            let cgimage = coreImageView?.coreImageContext?.createCGImage(filterManager.currentImage!, from: filterManager.currentImage!.extent)
+            let uiimage = UIImage(cgImage: cgimage!)
+            filterViewController?.image = uiimage
+            filterViewController?.delegate = self
+            self.navigationController?.pushViewController(filterViewController!, animated: true)
+        }
     }
 
     @IBAction func settingsDIdTap(_ sender: AnyObject) {
@@ -155,8 +135,8 @@ class CameraCaptureViewController: UIViewController {
         case .camera:()
 
         case .video:
-            if let videoCreator = videoCreator {
-                if !videoCreator.sessionRunning {
+            if let filterManager = filterManager {
+                if !filterManager.isRecordingVideo {
                     captureButton.setTitle("Recording....", for: UIControlState())
                 } else {
                     captureButton.setTitle("Start recording", for: UIControlState())
@@ -172,8 +152,8 @@ class CameraCaptureViewController: UIViewController {
 
         let outputFilePath = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("FilterCam" + "\(Date().timeIntervalSince1970)" + ".mov")
 
-        if let _ = videoCreator {
-            if isrecordingVideo{
+        if let filterManager = filterManager {
+            if filterManager.isRecordingVideo {
                 self.stopVideoRecording({ (savedUrl) in
                     //self.handleAfterRecordingVideo(savedUrl)
                 })
@@ -223,29 +203,9 @@ class CameraCaptureViewController: UIViewController {
         present(alertController, animated: true, completion: nil)
     }
 
-
-    fileprivate func handleTheOutputBuffer(_ sampleBuffer: CMSampleBuffer, transform: CGAffineTransform) {
-        let ciimage = CIImage(buffer: sampleBuffer).applying(AVCaptureDevicePosition.back.transform)
-        currentImage = ciimage
-        
-        let filter = FilterGenerator.pixellate(scale: 6)
-        numberOfFrames += 1
-        let image = filter(ciimage)
-
-        coreImageView?.image = image
-
-        let cgimage = coreImageView?.coreImageContext.createCGImage(image, from: image.extent)
-
-        //debugPrint(numberOfFrames)
-
-        if let cgimage = cgimage {
-            if isrecordingVideo {
-                //print()
-                videoCreator?.appendImage(cgimage, inrect: image.extent, completion: { (numberOfFrames) in
-
-                })
-            }
-        }
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        print("---------------------------------------------Recieved Memory warning---------------------------------------------")
     }
 }
 
@@ -256,6 +216,14 @@ extension CameraCaptureViewController: SettingsViewControllerDelegate {
             self.viewModel.captureMode = captureMode
             self.reloadAllTheInputs()
         }
+    }
+}
+
+extension CameraCaptureViewController: FilterViewControllerDelegate {
+    func filterViewController(viewController: FilterViewController, didSelectFilter filter: @escaping (CIImage) -> CIImage?) {
+        _ = navigationController?.popViewController(animated: true)
+        currentFilter = filter
+        filterManager?.applyFilter(filter: filter)
     }
 }
 
