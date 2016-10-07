@@ -4,25 +4,15 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
-		<key>Circular Indicator.xcscheme</key>
+		<key>CreditScore.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>0</integer>
 		</dict>
-		<key>CreditScoreProgress.xcscheme</key>
-		<dict>
-			<key>orderHint</key>
-			<integer>1</integer>
-		</dict>
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
-		<key>113BF84F1D700FE000F0475B</key>
-		<dict>
-			<key>primary</key>
-			<true/>
-		</dict>
-		<key>11A106401D98FB7300697D69</key>
+		<key>1122E8011D98FBEA00F5B3D4</key>
 		<dict>
 			<key>primary</key>
 			<true/>

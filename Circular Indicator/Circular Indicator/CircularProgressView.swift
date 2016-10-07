@@ -10,7 +10,7 @@ import UIKit
 
 @IBDesignable class CircularProgressView: UIView {
 
-    private var circularShapeLayer: CAShapeLayer?
+    fileprivate var circularShapeLayer: CAShapeLayer?
 
     @IBInspectable var progress: CGFloat = 0.0 {
         didSet {
@@ -23,33 +23,33 @@ import UIKit
         sharedInit()
     }
 
-    private func sharedInit() {
-        backgroundColor = UIColor.brownColor()
+    fileprivate func sharedInit() {
+        backgroundColor = UIColor.brown
         addCircularLayers()
     }
 
-    private func addCircularLayers() {
+    fileprivate func addCircularLayers() {
         circularShapeLayer = CAShapeLayer()
         circularShapeLayer?.frame = bounds
-        circularShapeLayer?.backgroundColor = UIColor.blackColor().CGColor
+        circularShapeLayer?.backgroundColor = UIColor.clear.cgColor
 
         layer.addSublayer(circularShapeLayer!)
         layer.masksToBounds = true
         addCurcularPath()
     }
 
-    private func addCurcularPath() {
+    fileprivate func addCurcularPath() {
 
         let startAngle = -90.f.rad
         let endAngle = 270.f.rad
 
         let path = UIBezierPath(arcCenter: circularShapeLayer!.position, radius: bounds.width / 2 - 20, startAngle: startAngle, endAngle: endAngle, clockwise: true)
 
-        circularShapeLayer?.fillColor = UIColor.clearColor().CGColor
-        circularShapeLayer?.lineWidth = 3
+        circularShapeLayer?.fillColor = UIColor.clear.cgColor
+        circularShapeLayer?.lineWidth = 5
         circularShapeLayer?.fillRule = kCAFillRuleNonZero
-        circularShapeLayer?.strokeColor = UIColor.cyanColor().CGColor
-        circularShapeLayer?.path = path.CGPath
+        circularShapeLayer?.strokeColor = UIColor.cyan.cgColor
+        circularShapeLayer?.path = path.cgPath
 
         circularShapeLayer?.strokeEnd = 1
         circularShapeLayer?.strokeStart = 0
@@ -58,33 +58,27 @@ import UIKit
 
         animation.fromValue = 0
         animation.toValue = 1
-        animation.duration = 2
-        animation.repeatCount = Float(CGFloat.max)
+        animation.duration = 1
 
+        let strokeAnimation = CABasicAnimation(keyPath: "strokeStart")
 
-        let strokeAnimation = CABasicAnimation(keyPath: "strokeEnd")
+        strokeAnimation.fromValue = 0
+        strokeAnimation.toValue = 1
+        strokeAnimation.duration = 1
+        strokeAnimation.beginTime = 1
 
-        strokeAnimation.fromValue = 1
-        strokeAnimation.toValue = 0
-        strokeAnimation.duration = 2
-        strokeAnimation.beginTime = 2
-
-        strokeAnimation.repeatCount = Float(CGFloat.max)
-
-        let rotationAnimation = CABasicAnimation(keyPath: "transform.rotation")
+        let rotationAnimation = CABasicAnimation(keyPath: "transform.rotation.z")
         rotationAnimation.fromValue = 0
         rotationAnimation.toValue = M_PI * 2
-        rotationAnimation.duration = 1
-        rotationAnimation.repeatCount = Float(CGFloat.max)
+        rotationAnimation.duration = 2
+        rotationAnimation.repeatCount = Float(CGFloat.greatestFiniteMagnitude)
 
         let groupAnimation = CAAnimationGroup()
         groupAnimation.animations = [animation,strokeAnimation,rotationAnimation]
-        groupAnimation.duration = 4
-        groupAnimation.repeatCount = Float(CGFloat.max)
+        groupAnimation.duration = 2
+        groupAnimation.repeatCount = Float(CGFloat.greatestFiniteMagnitude)
 
-        circularShapeLayer?.addAnimation(groupAnimation, forKey: "downloadAnimation")
-        circularShapeLayer?.strokeEnd = 1
-        circularShapeLayer?.strokeStart = 0
+        circularShapeLayer?.add(groupAnimation, forKey: "downloadAnimation")
     }
 
     override func layoutSubviews() {

@@ -1,8 +1,8 @@
 //
 //  ViewController.swift
-//  Circular Indicator
+//  CreditScore
 //
-//  Created by Shreesha on 26/08/16.
+//  Created by Shreesha on 26/09/16.
 //  Copyright © 2016 YML. All rights reserved.
 //
 
@@ -10,7 +10,7 @@ import UIKit
 
 class ViewController: UIViewController {
 
-    @IBOutlet weak var containerView: CircularProgressView!
+    @IBOutlet weak var circularProgressView: CreditScoreProgressView!
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
@@ -21,16 +21,13 @@ class ViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
 
-    @IBAction func stopAction(_ sender: AnyObject) {
-
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        circularProgressView.addProgressLayer(withAnimation: true)
     }
-
-    @IBAction func startAction(_ sender: AnyObject) {
-
-    }
-
-    @IBAction func reverseTheAnimation(_ sender: AnyObject) {
-        
+    
+    @IBAction func startAnimation(_ sender: AnyObject) {
+        circularProgressView.addProgressLayer(withAnimation: true)
     }
 }
 
